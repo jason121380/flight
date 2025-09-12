@@ -109,9 +109,6 @@
     </div>
     <aside id="flightList" class="flight-list">
       <h2>航班清單</h2>
-      <div style="padding: 10px; color: #6b7280; font-size: 14px;">
-        等待 API 載入航班資料...
-      </div>
     </aside>
   </div>
   
@@ -140,9 +137,8 @@
     </div>
   </div>
   <script>
-    // Google Apps Script Web App URL（請替換為您的實際 URL）
-    // 部署後請更新此 URL，確保使用最新版本
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbweGnvC0UWooUPwt6DBvRKagXDiJOpZwc11q3tM4FNFumXHrB34bJyXO9rZBP5_hD0s/exec';
+    // 直接使用發布到網路的 CSV 連結
+    const SHEETS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQqkpj4xzdNRa2qC30VjkGq-eLJcbrv-hPRKa6si93WEFsekexY4EYXnPiZJVWldHRHrG4lR-cyKBbP/pub?gid=665636533&single=true&output=csv';
     
     const btn = document.getElementById('toggleList');
     const list = document.getElementById('flightList');
@@ -361,22 +357,169 @@
       return timeStr;
     }
     
-    // 從 Google Apps Script 載入航班資料 (主要使用 JSONP，避免 CORS 問題)
+    // 從 Google Sheets 載入航班資料 (使用發布到網路的 CSV)
     function loadFlightsFromGAS() {
-      if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
-        console.log('請設定 APPS_SCRIPT_URL');
-        return;
-      }
-      
       // 顯示載入動畫並清空現有資料
       showLoading();
-      console.log('正在載入航班資料...');
+      console.log('正在從發布的 Google Sheets 載入航班資料...');
       
-      // 主要使用 JSONP 方式（避免 CORS 問題）
-      loadWithJSONP();
+      updateProgress(10, '連接 Google Sheets...');
+      
+      fetch(SHEETS_CSV_URL)
+        .then(response => {
+          console.log('CSV 回應狀態:', response.status);
+          updateProgress(30, '下載資料...');
+          
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          return response.text();
+        })
+        .then(csvText => {
+          console.log('CSV 資料載入成功，長度:', csvText.length);
+          console.log('CSV 內容預覽:', csvText.substring(0, 300));
+          updateProgress(60, '解析 CSV 資料...');
+          
+          // 解析 CSV 資料
+          const flights = parseCSVToFlights(csvText);
+          console.log(`解析完成，找到 ${flights.length} 筆航班資料:`, flights);
+          
+          if (flights.length === 0) {
+            throw new Error('解析後沒有找到任何航班資料');
+          }
+          
+          updateProgress(85, '格式化時間資料...');
+          
+          // 格式化時間
+          const formattedFlights = flights.map(flight => ({
+            ...flight,
+            deptTime: formatTimeOnFrontend(flight.deptTime),
+            arrTime: formatTimeOnFrontend(flight.arrTime)
+          }));
+          
+          updateProgress(95, '生成日曆...');
+          
+          setTimeout(() => {
+            updateCalendarWithFlights(formattedFlights);
+            updateFlightList(formattedFlights);
+            hideLoading();
+          }, 100);
+          
+        })
+        .catch(error => {
+          console.error('Google Sheets CSV 載入失敗:', error);
+          console.log('使用的 CSV URL:', SHEETS_CSV_URL);
+          hideLoading();
+          
+          // 提供更詳細的錯誤訊息和解決方案
+          if (error.message.includes('Failed to fetch')) {
+            showConnectionError(`網路連線失敗，無法存取 Google Sheets CSV。\n\n可能的解決方案：\n1. 檢查網路連線\n2. 確認 Google Sheets 已發布到網路\n3. 嘗試重新整理頁面`);
+          } else {
+            showConnectionError(`載入錯誤: ${error.message}`);
+          }
+        });
     }
     
-    // JSONP 載入方式
+    // 解析 CSV 資料為航班物件
+    function parseCSVToFlights(csvText) {
+      const lines = csvText.trim().split('\n');
+      const flights = [];
+      
+      // 跳過第一行（標題行）
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        
+        // 解析 CSV 行（處理逗號分隔和引號包圍的值）
+        const values = parseCSVLine(line);
+        
+        // 跳過空白行
+        if (!values[0]) continue;
+        
+        const flight = {
+          date: formatDate(values[0]),
+          airline: values[1] || '',
+          departure: values[2] || '',
+          arrival: values[3] || '',
+          deptTime: values[4] || '',
+          arrTime: values[5] || '',
+          flightNo: values[6] || '',
+          airlineEn: values[7] || '',
+          // 產生簡化版本的地名
+          departureShort: simplifyLocation(values[2]),
+          arrivalShort: simplifyLocation(values[3])
+        };
+        
+        flights.push(flight);
+      }
+      
+      // 按日期排序
+      flights.sort((a, b) => new Date(a.date) - new Date(b.date));
+      
+      return flights;
+    }
+    
+    // 解析 CSV 行（處理逗號和引號）
+    function parseCSVLine(line) {
+      const values = [];
+      let current = '';
+      let inQuotes = false;
+      
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          values.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      
+      // 加入最後一個值
+      values.push(current.trim());
+      
+      return values;
+    }
+    
+    // 格式化日期為 YYYY-MM-DD
+    function formatDate(date) {
+      if (!date) return '';
+      
+      // 如果已經是正確格式，直接返回
+      if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return date;
+      }
+      
+      const d = new Date(date);
+      if (isNaN(d.getTime())) return date.toString();
+      
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      
+      return `${year}-${month}-${day}`;
+    }
+    
+    // 簡化地名函數（從 Apps Script 複製）
+    function simplifyLocation(location) {
+      if (!location) return '';
+      
+      const simplifications = {
+        '台北桃園': '桃園',
+        '台北松山': '松山',
+        '上海浦東': '浦東',
+        '上海虹橋': '虹橋',
+        '首爾仁川': '仁川',
+        '首爾金浦': '金浦'
+      };
+      
+      return simplifications[location] || location;
+    }
+    
+    // JSONP 載入方式（備用）
     function loadWithJSONP() {
       console.log('開始 JSONP 請求...');
       updateProgress(10, '建立連線...');
@@ -495,87 +638,39 @@
     function showConnectionError(errorMessage = '') {
       const calendarWrap = document.querySelector('.calendar-wrap');
       
-      let errorDetails = '';
-      if (errorMessage) {
-        if (errorMessage.includes('JSONP')) {
-          errorDetails = `
-            <div style="font-size:13px;color:#dc2626;margin-bottom:16px;padding:10px;background:#fef2f2;border-radius:6px;">
-              錯誤：${errorMessage}<br><br>
-              <strong>解決方案：</strong><br>
-              1. 確認 Apps Script 部署時選擇「任何人」存取權限<br>
-              2. 檢查 Apps Script URL 是否正確<br>
-              3. 確認 Google Sheets 資料存在且可存取
-            </div>
-          `;
-        } else if (errorMessage.includes('Failed to fetch')) {
-          errorDetails = `
-            <div style="font-size:13px;color:#dc2626;margin-bottom:16px;padding:10px;background:#fef2f2;border-radius:6px;">
-              注意：此錯誤來自測試工具，不影響正常功能<br><br>
-              <strong>說明：</strong><br>
-              此應用程式使用 JSONP 方式避免 CORS 問題，<br>
-              無需擔心 Fetch 相關錯誤。
-            </div>
-          `;
-        } else {
-          errorDetails = `
-            <div style="font-size:13px;color:#dc2626;margin-bottom:16px;padding:10px;background:#fef2f2;border-radius:6px;">
-              錯誤詳情：${errorMessage}
-            </div>
-          `;
-        }
-      }
-      
       calendarWrap.innerHTML = `
         <div style="text-align:center;padding:40px;color:#ef4444;">
-          <div style="font-size:18px;margin-bottom:8px;">網路連線失敗</div>
-          <div style="font-size:14px;color:#6b7280;margin-bottom:16px;">無法連接到 Google Apps Script</div>
-          ${errorDetails}
-          <div style="font-size:13px;color:#9ca3af;margin-bottom:20px;">
-            可能原因：<br>
-            • Apps Script 部署權限設定問題<br>
-            • 網路連線不穩定<br>
-            • CORS 政策限制<br>
-            • Apps Script 服務暫時不可用
-          </div>
-          <button onclick="loadFlightsFromGAS()" style="margin-top:16px;padding:8px 16px;background:#1d4ed8;color:white;border:none;border-radius:6px;cursor:pointer;">重新載入</button>
-          <button onclick="window.open('${APPS_SCRIPT_URL}', '_blank')" style="margin-top:16px;margin-left:8px;padding:8px 16px;background:#6b7280;color:white;border:none;border-radius:6px;cursor:pointer;">直接測試 API</button>
-          <button onclick="testJSONPConnection()" style="margin-top:16px;margin-left:8px;padding:8px 16px;background:#059669;color:white;border:none;border-radius:6px;cursor:pointer;">測試 JSONP 連線</button>
+          <div style="font-size:18px;margin-bottom:8px;">載入失敗</div>
+          <div style="font-size:14px;color:#6b7280;margin-bottom:16px;">無法從 Google Sheets 載入航班資料</div>
         </div>
       `;
     }
     
-    // 測試 JSONP 連線
-    function testJSONPConnection() {
-      console.log('手動測試 JSONP 連線...');
-      const callbackName = 'testCallback_' + Date.now();
+    // 測試直接 CSV 連結
+    function testDirectCSV() {
+      console.log('測試 CSV 連結:', SHEETS_CSV_URL);
       
-      window[callbackName] = function(result) {
-        console.log('測試回應:', result);
-        alert(`JSONP 測試結果:\n成功: ${result.success}\n資料: ${JSON.stringify(result.data, null, 2)}`);
-        delete window[callbackName];
-        if (script && script.parentNode) {
-          document.head.removeChild(script);
-        }
-      };
-      
-      const script = document.createElement('script');
-      script.src = `${APPS_SCRIPT_URL}?action=getFlights&callback=${callbackName}`;
-      script.onerror = function() {
-        alert('JSONP 測試失敗 - script 載入錯誤');
-        delete window[callbackName];
-      };
-      
-      setTimeout(() => {
-        if (window[callbackName]) {
-          alert('JSONP 測試超時 - 沒有收到回應');
-          delete window[callbackName];
-          if (script && script.parentNode) {
-            document.head.removeChild(script);
+      fetch(SHEETS_CSV_URL)
+        .then(response => {
+          if (response.ok) {
+            return response.text();
           }
-        }
-      }, 5000);
-      
-      document.head.appendChild(script);
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        })
+        .then(csvText => {
+          const lines = csvText.split('\n');
+          const preview = lines.slice(0, 5).join('\n');
+          console.log('CSV 測試成功:', csvText.substring(0, 200));
+          
+          alert(`✅ CSV 連結測試成功！\n\n資料預覽:\n${preview}\n\n總行數: ${lines.length}\n\n如果看到航班資料，請點擊「重新載入」`);
+        })
+        .catch(error => {
+          console.error('CSV 測試失敗:', error);
+          alert(`❌ CSV 連結測試失敗\n\n錯誤: ${error.message}\n\n請確認：\n1. Google Sheets 已發布到網路\n2. 網路連線正常\n3. 嘗試在新視窗直接開啟 CSV 連結`);
+          
+          // 自動開啟 CSV 連結讓用戶檢查
+          window.open(SHEETS_CSV_URL, '_blank');
+        });
     }
     
     // 更新日曆顯示
