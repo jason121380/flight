@@ -794,6 +794,7 @@
   </div>
   <script>
     // Google Apps Script Web App URL（請替換為您的實際 URL）
+    // 部署後請更新此 URL，確保使用最新版本
     const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbweGnvC0UWooUPwt6DBvRKagXDiJOpZwc11q3tM4FNFumXHrB34bJyXO9rZBP5_hD0s/exec';
     
     const btn = document.getElementById('toggleList');
@@ -979,7 +980,7 @@
       return timeStr;
     }
     
-    // 從 Google Apps Script 載入航班資料 (使用 JSONP 避免 CORS)
+    // 從 Google Apps Script 載入航班資料 (主要使用 JSONP，避免 CORS 問題)
     function loadFlightsFromGAS() {
       if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
         console.log('請設定 APPS_SCRIPT_URL');
@@ -990,6 +991,12 @@
       showLoading();
       console.log('正在載入航班資料...');
       
+      // 主要使用 JSONP 方式（避免 CORS 問題）
+      loadWithJSONP();
+    }
+    
+    // JSONP 載入方式
+    function loadWithJSONP() {
       // 建立 JSONP 回調函數
       const callbackName = 'flightDataCallback_' + Date.now();
       window[callbackName] = function(result) {
@@ -1052,26 +1059,153 @@
       const script = document.createElement('script');
       script.src = `${APPS_SCRIPT_URL}?action=getFlights&callback=${callbackName}`;
       script.onerror = function() {
-        console.error('載入 script 失敗');
-        hideLoading();
-        
-        // 顯示網路錯誤訊息
-        const calendarWrap = document.querySelector('.calendar-wrap');
-        calendarWrap.innerHTML = `
-          <div style="text-align:center;padding:40px;color:#ef4444;">
-            <div style="font-size:18px;margin-bottom:8px;">網路連線失敗</div>
-            <div style="font-size:14px;color:#6b7280;">無法連接到 Google Apps Script</div>
-            <button onclick="loadFlightsFromGAS()" style="margin-top:16px;padding:8px 16px;background:#1d4ed8;color:white;border:none;border-radius:6px;cursor:pointer;">重新載入</button>
-          </div>
-        `;
-        
+        console.error('JSONP 載入失敗');
         delete window[callbackName];
         if (script && script.parentNode) {
           document.head.removeChild(script);
         }
+        
+        // 顯示錯誤，因為 JSONP 是主要方式
+        showConnectionError('JSONP script 載入失敗');
       };
       
+      // 設定超時
+      setTimeout(() => {
+        if (window[callbackName]) {
+          console.error('JSONP 請求超時');
+          delete window[callbackName];
+          if (script && script.parentNode) {
+            document.head.removeChild(script);
+          }
+          showConnectionError('JSONP 請求超時（10秒）');
+        }
+      }, 10000); // 10秒超時
+      
       document.head.appendChild(script);
+    }
+    
+    // Fetch 載入方式（備用）
+    function loadWithFetch() {
+      updateProgress(20, '嘗試直接連線...');
+      
+      // 先嘗試 OPTIONS 預檢請求
+      fetch(APPS_SCRIPT_URL, {
+        method: 'OPTIONS',
+        mode: 'cors',
+        headers: {
+          'Access-Control-Request-Method': 'GET',
+          'Access-Control-Request-Headers': 'Content-Type'
+        },
+      })
+      .then(() => {
+        console.log('OPTIONS 預檢請求成功');
+        return fetch(`${APPS_SCRIPT_URL}?action=getFlights`, {
+          method: 'GET',
+          mode: 'cors',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+      })
+      .catch(error => {
+        console.log('OPTIONS 預檢失敗，直接嘗試 GET 請求:', error);
+        // 如果 OPTIONS 失敗，直接嘗試 GET
+        return fetch(`${APPS_SCRIPT_URL}?action=getFlights`, {
+          method: 'GET',
+          mode: 'cors',
+          credentials: 'omit', // 不發送認證資訊
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+      })
+      .then(result => {
+        if (result.success) {
+          console.log('Fetch 方式成功載入航班資料:', result.data);
+          
+          updateProgress(85, '格式化時間資料...');
+          
+          const flights = result.data.flights.map(flight => ({
+            ...flight,
+            deptTime: formatTimeOnFrontend(flight.deptTime),
+            arrTime: formatTimeOnFrontend(flight.arrTime)
+          }));
+          
+          updateProgress(95, '生成日曆...');
+          
+          setTimeout(() => {
+            updateCalendarWithFlights(flights);
+            updateFlightList(flights);
+          }, 50);
+        } else {
+          throw new Error(result.data.error || '載入失敗');
+        }
+      })
+      .catch(error => {
+        console.error('Fetch 方式失敗:', error.message);
+        showConnectionError(error.message);
+      })
+      .finally(() => {
+        hideLoading();
+      });
+    }
+    
+    // 顯示連線錯誤
+    function showConnectionError(errorMessage = '') {
+      const calendarWrap = document.querySelector('.calendar-wrap');
+      
+      let errorDetails = '';
+      if (errorMessage) {
+        if (errorMessage.includes('JSONP')) {
+          errorDetails = `
+            <div style="font-size:13px;color:#dc2626;margin-bottom:16px;padding:10px;background:#fef2f2;border-radius:6px;">
+              錯誤：${errorMessage}<br><br>
+              <strong>解決方案：</strong><br>
+              1. 確認 Apps Script 部署時選擇「任何人」存取權限<br>
+              2. 檢查 Apps Script URL 是否正確<br>
+              3. 確認 Google Sheets 資料存在且可存取
+            </div>
+          `;
+        } else if (errorMessage.includes('Failed to fetch')) {
+          errorDetails = `
+            <div style="font-size:13px;color:#dc2626;margin-bottom:16px;padding:10px;background:#fef2f2;border-radius:6px;">
+              錯誤：${errorMessage}<br><br>
+              <strong>說明：</strong><br>
+              此應用程式主要使用 JSONP 方式避免 CORS 問題，<br>
+              Fetch 錯誤不會影響正常功能。
+            </div>
+          `;
+        } else {
+          errorDetails = `
+            <div style="font-size:13px;color:#dc2626;margin-bottom:16px;padding:10px;background:#fef2f2;border-radius:6px;">
+              錯誤詳情：${errorMessage}
+            </div>
+          `;
+        }
+      }
+      
+      calendarWrap.innerHTML = `
+        <div style="text-align:center;padding:40px;color:#ef4444;">
+          <div style="font-size:18px;margin-bottom:8px;">網路連線失敗</div>
+          <div style="font-size:14px;color:#6b7280;margin-bottom:16px;">無法連接到 Google Apps Script</div>
+          ${errorDetails}
+          <div style="font-size:13px;color:#9ca3af;margin-bottom:20px;">
+            可能原因：<br>
+            • Apps Script 部署權限設定問題<br>
+            • 網路連線不穩定<br>
+            • CORS 政策限制<br>
+            • Apps Script 服務暫時不可用
+          </div>
+          <button onclick="loadFlightsFromGAS()" style="margin-top:16px;padding:8px 16px;background:#1d4ed8;color:white;border:none;border-radius:6px;cursor:pointer;">重新載入</button>
+          <button onclick="window.open('${APPS_SCRIPT_URL}', '_blank')" style="margin-top:16px;margin-left:8px;padding:8px 16px;background:#6b7280;color:white;border:none;border-radius:6px;cursor:pointer;">直接測試 API</button>
+        </div>
+      `;
     }
     
     // 更新日曆顯示
