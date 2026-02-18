@@ -47,10 +47,19 @@
   .has-event{background:linear-gradient(180deg,#ffffff 0%,#ffffff 70%,#f3f6ff 100%)}
   .cell.today.has-event{background:linear-gradient(135deg,#f0f7ff 0%,#e0f0ff 100%)}
   /* 右側列表 */
-  aside.flight-list{border-left:1px solid var(--line);background:#fff;padding:12px;position:sticky;top:44px;height:calc(100vh - 44px);overflow:auto}
-  .flight-list h2{font-size:16px;margin:0 0 10px}
+  aside.flight-list{border-left:1px solid var(--line);background:#fff;padding:12px;position:sticky;top:44px;height:calc(100vh - 44px);overflow:hidden;display:flex;flex-direction:column}
+  .flight-list h2{font-size:16px;margin:0 0 10px;flex-shrink:0}
+  /* Tab bar */
+  .fl-tabs{display:flex;border-bottom:1px solid var(--line);margin-bottom:10px;flex-shrink:0}
+  .fl-tab{flex:1;padding:7px 0;font-size:13px;text-align:center;cursor:pointer;color:#6b7280;border-bottom:2px solid transparent;margin-bottom:-1px;background:none;border-top:none;border-left:none;border-right:none}
+  .fl-tab.active{color:#1d4ed8;border-bottom-color:#1d4ed8;font-weight:600}
+  .fl-tab-count{display:inline-block;font-size:11px;padding:1px 5px;border-radius:999px;background:#f3f4f6;color:#6b7280;margin-left:4px;font-weight:400}
+  .fl-tab.active .fl-tab-count{background:#dbeafe;color:#1d4ed8}
+  .fl-tab-panel{display:none;overflow-y:auto;flex:1}
+  .fl-tab-panel.active{display:block}
   .flight-list .card{display:block;text-decoration:none;color:inherit;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:10px 12px;margin-bottom:10px}
   .flight-list .card:hover{background:#eef2ff;border-color:#c7d2fe}
+  .flight-list .card.departed{opacity:0.5}
   .flight-list .date-tag{font-size:12px;color:#6b7280;margin-bottom:2px}
   .flight-list .airline{font-weight:600;color:#1d4ed8;font-size:13px}
   .flight-list .route{font-size:13px;margin-top:2px}
@@ -128,6 +137,12 @@
     </div>
     <aside id="flightList" class="flight-list">
       <h2>航班清單</h2>
+      <div class="fl-tabs">
+        <button class="fl-tab active" data-tab="upcoming">待出發<span class="fl-tab-count" id="upcomingCount">0</span></button>
+        <button class="fl-tab" data-tab="departed">已出發<span class="fl-tab-count" id="departedCount">0</span></button>
+      </div>
+      <div class="fl-tab-panel active" id="tabUpcoming"></div>
+      <div class="fl-tab-panel" id="tabDeparted"></div>
     </aside>
   </div>
   
@@ -157,7 +172,17 @@
     });
     
     btn && btn.addEventListener('click', ()=> list.classList.toggle('open'));
-    
+
+    // Tab 切換
+    document.querySelectorAll('.fl-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.fl-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.fl-tab-panel').forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById('tab' + tab.dataset.tab.charAt(0).toUpperCase() + tab.dataset.tab.slice(1)).classList.add('active');
+      });
+    });
+
     // 點擊選單外部區域關閉選單
     document.addEventListener('click', (e) => {
       if (window.matchMedia('(max-width: 768px)').matches && list.classList.contains('open')) {
@@ -265,7 +290,7 @@
           </div>
           <div class="loading-text" id="progressText">正在連接...</div>
         </div>`;
-      flightList.querySelectorAll('.card').forEach(card => card.remove());
+      ['tabUpcoming','tabDeparted'].forEach(id => { const el = document.getElementById(id); if(el) el.innerHTML=''; });
       startRefreshSpin();
 
       // 模擬進度動畫
@@ -675,40 +700,41 @@
     
     // 更新航班清單
     function updateFlightList(flights) {
-      const listContainer = document.querySelector('#flightList');
-      if (!listContainer) return;
-      
-      // 清除所有內容
-      listContainer.innerHTML = '';
-      
-      // 重新加入標題
-      const title = document.createElement('h2');
-      title.textContent = '航班清單';
-      listContainer.appendChild(title);
-      
-      if (flights.length === 0) {
-        const noDataMsg = document.createElement('div');
-        noDataMsg.style.cssText = 'padding: 20px; color: #6b7280; font-size: 14px; text-align: center;';
-        noDataMsg.textContent = '目前沒有航班資料';
-        listContainer.appendChild(noDataMsg);
-        return;
+      const tabUpcoming  = document.getElementById('tabUpcoming');
+      const tabDeparted  = document.getElementById('tabDeparted');
+      if (!tabUpcoming || !tabDeparted) return;
+
+      const todayStr = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+
+      const upcoming = flights.filter(f => f.date >= todayStr);
+      const departed = flights.filter(f => f.date <  todayStr);
+
+      document.getElementById('upcomingCount').textContent = upcoming.length;
+      document.getElementById('departedCount').textContent = departed.length;
+
+      function buildCards(list, container, isDeparted) {
+        container.innerHTML = '';
+        if (list.length === 0) {
+          container.innerHTML = '<div style="padding:20px;color:#6b7280;font-size:14px;text-align:center">沒有航班</div>';
+          return;
+        }
+        list.forEach(flight => {
+          const cardEl = document.createElement('a');
+          cardEl.className = 'card' + (isDeparted ? ' departed' : '');
+          cardEl.href = `#d-${flight.date}`;
+          cardEl.onclick = closeListOnMobile;
+          cardEl.innerHTML = `
+            <div class="date-tag">${flight.date}</div>
+            <div class="airline">${flight.airline} ${flight.airlineEn}</div>
+            <div class="route">${flight.departure} → ${flight.arrival}</div>
+            <div class="meta">${flight.deptTime} → ${flight.arrTime} ・ ${flight.flightNo}</div>
+          `;
+          container.appendChild(cardEl);
+        });
       }
-      
-      flights.forEach(flight => {
-        const cardEl = document.createElement('a');
-        cardEl.className = 'card';
-        cardEl.href = `#d-${flight.date}`;
-        cardEl.onclick = closeListOnMobile;
-        
-        cardEl.innerHTML = `
-          <div class="date-tag">${flight.date}</div>
-          <div class="airline">${flight.airline} ${flight.airlineEn}</div>
-          <div class="route">${flight.departure} → ${flight.arrival}</div>
-          <div class="meta">${flight.deptTime} → ${flight.arrTime} ・ ${flight.flightNo}</div>
-        `;
-        
-        listContainer.appendChild(cardEl);
-      });
+
+      buildCards(upcoming, tabUpcoming, false);
+      buildCards(departed, tabDeparted, true);
     }
     
     // ── 下拉刷新 (Pull-to-Refresh) ──────────────────────────────
