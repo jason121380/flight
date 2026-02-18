@@ -15,6 +15,10 @@
   header{position:sticky;top:0;z-index:30;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:10px 14px}
   header h1{margin:0;font-size:18px}
   .list-btn{font-size:20px;background:none;border:none;cursor:pointer;display:none}
+  .refresh-btn{font-size:20px;background:none;border:none;cursor:pointer;line-height:1;transition:opacity 0.2s}
+  .refresh-btn:disabled{opacity:0.5;cursor:default}
+  .refresh-btn.spinning{animation:spin 0.8s linear infinite}
+  @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
   .container{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:3fr 1fr;gap:0;min-height:calc(100vh - 44px)}
   .calendar-wrap{padding:10px}
   .month{border-top:1px solid var(--line)}
@@ -101,7 +105,10 @@
 <body>
   <header>
     <h1>My Flights</h1>
-    <button id="toggleList" class="list-btn" aria-label="切換清單">☰</button>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button id="refreshBtn" class="refresh-btn" aria-label="重新整理">🔄</button>
+      <button id="toggleList" class="list-btn" aria-label="切換清單">☰</button>
+    </div>
   </header>
   <div class="container">
     <div class="calendar-wrap">
@@ -142,6 +149,11 @@
     
     const btn = document.getElementById('toggleList');
     const list = document.getElementById('flightList');
+    const refreshBtn = document.getElementById('refreshBtn');
+
+    refreshBtn && refreshBtn.addEventListener('click', () => {
+      loadFlightsFromGAS();
+    });
     
     btn && btn.addEventListener('click', ()=> list.classList.toggle('open'));
     
@@ -227,6 +239,16 @@
     // 進度條控制
     let progressInterval;
     
+    // 重新整理按鈕動畫控制
+    function startRefreshSpin() {
+      const refreshBtn = document.getElementById('refreshBtn');
+      if (refreshBtn) { refreshBtn.classList.add('spinning'); refreshBtn.disabled = true; }
+    }
+    function stopRefreshSpin() {
+      const refreshBtn = document.getElementById('refreshBtn');
+      if (refreshBtn) { refreshBtn.classList.remove('spinning'); refreshBtn.disabled = false; }
+    }
+
     // 顯示載入動畫
     function showLoading() {
       const loadingModal = document.getElementById('loadingModal');
@@ -234,6 +256,7 @@
       const progressText = document.getElementById('progressText');
       
       loadingModal.classList.add('show');
+      startRefreshSpin();
       
       // 清空現有內容
       const calendarWrap = document.querySelector('.calendar-wrap');
@@ -299,6 +322,7 @@
       
       // 立即隱藏，不等待動畫
       loadingModal.classList.remove('show');
+      stopRefreshSpin();
       console.log('載入動畫已隱藏');
       
       // 確保載入動畫確實關閉
