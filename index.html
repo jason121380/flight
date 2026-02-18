@@ -52,6 +52,7 @@
   /* 手機版事件簡化顯示 */
   .event-compact{display:none}
   .event-full{display:block}
+  .event-dot{display:none}
   
   /* 彈窗樣式 */
   .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:50;display:none;align-items:center;justify-content:center;padding:20px;box-sizing:border-box}
@@ -98,15 +99,15 @@
     aside.flight-list.open{right:0}
     .month-header{top:44px}
 
-    /* 手機版事件：圓圈點指示器 */
-    .event{cursor:pointer;background:none;border:none;padding:0;border-radius:50%;width:10px;height:10px;min-width:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform 0.15s ease}
-    .event:active{transform:scale(1.4)}
+    /* 手機版事件：圓圈彈窗指示器 */
+    .event{cursor:pointer;background:#4338ca;border:none;padding:0;border-radius:50%;width:22px;height:22px;min-width:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform 0.15s ease,opacity 0.15s ease;-webkit-tap-highlight-color:transparent;box-shadow:0 2px 6px rgba(67,56,202,0.4)}
+    .event:active{transform:scale(0.85);opacity:0.8}
+    .event-dot{display:none}
     .event-compact{display:none}
     .event-full{display:none}
-    .event-dot{display:block;width:8px;height:8px;background:#4338ca;border-radius:50%;box-shadow:0 1px 4px rgba(67,56,202,0.5)}
 
-    /* 有航班的格子：日期占整行，圓點橫排其下 */
-    .cell.has-event{flex-direction:row;flex-wrap:wrap;align-items:flex-start;gap:3px}
+    /* 有航班的格子：日期占整行，圓圈橫排其下 */
+    .cell.has-event{flex-direction:row;flex-wrap:wrap;align-items:flex-start;gap:4px;padding-bottom:6px}
     .cell.has-event .date{width:100%;flex-shrink:0}
   }
 </style>
