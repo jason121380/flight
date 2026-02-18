@@ -154,7 +154,6 @@
       待出發
     </button>
     <button class="bn-item" data-panel="panelDeparted">
-      <span class="bn-badge" id="badgeDeparted" data-count="0">0</span>
       <svg viewBox="0 0 24 24">
         <polyline points="20 6 9 17 4 12"/>
       </svg>
@@ -535,10 +534,6 @@
       const badgeUp = document.getElementById('badgeUpcoming');
       badgeUp.textContent = upcoming.length;
       badgeUp.dataset.count = upcoming.length;
-
-      const badgeDep = document.getElementById('badgeDeparted');
-      badgeDep.textContent = departed.length;
-      badgeDep.dataset.count = departed.length;
 
       buildCards(upcoming, document.getElementById('listUpcoming'), false);
       buildCards(departed, document.getElementById('listDeparted'), true);
