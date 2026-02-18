@@ -222,7 +222,6 @@
       if (e.key === 'Escape') {
         const loadingModal = document.getElementById('loadingModal');
         if (loadingModal && loadingModal.classList.contains('show')) {
-          console.log('使用 Escape 鍵關閉載入動畫');
           hideLoading();
         }
       }
@@ -231,9 +230,8 @@
     // 點擊載入動畫關閉
     document.addEventListener('click', (e) => {
       const loadingModal = document.getElementById('loadingModal');
-      if (loadingModal && loadingModal.classList.contains('show') && 
+      if (loadingModal && loadingModal.classList.contains('show') &&
           (e.target === loadingModal || loadingModal.contains(e.target))) {
-        console.log('點擊載入動畫關閉');
         hideLoading();
       }
     });
@@ -312,13 +310,8 @@
     
     // 隱藏載入動畫
     function hideLoading() {
-      console.log('隱藏載入動畫');
       const loadingModal = document.getElementById('loadingModal');
-      
-      if (!loadingModal) {
-        console.log('找不到載入動畫元素');
-        return;
-      }
+      if (!loadingModal) return;
       
       // 清除進度條定時器
       if (progressInterval) {
@@ -329,15 +322,11 @@
       // 快速完成進度條動畫
       updateProgress(100, '載入完成！');
       
-      // 立即隱藏，不等待動畫
       loadingModal.classList.remove('show');
       stopRefreshSpin();
-      console.log('載入動畫已隱藏');
-      
-      // 確保載入動畫確實關閉
+
       setTimeout(() => {
         if (loadingModal.classList.contains('show')) {
-          console.log('強制關閉載入動畫');
           loadingModal.style.display = 'none';
         }
       }, 100);
@@ -372,8 +361,6 @@
                 localHours -= 24;
               }
               
-              console.log(`時間轉換: UTC ${utcHours}:${utcMinutes} -> 台灣時間 ${localHours}:${localMinutes}`);
-              
               return `${String(localHours).padStart(2, '0')}:${String(localMinutes).padStart(2, '0')}`;
             } else {
               // 正常日期使用本地時間
@@ -392,15 +379,11 @@
     
     // 從 Google Sheets 載入航班資料 (使用發布到網路的 CSV)
     function loadFlightsFromGAS() {
-      // 顯示載入動畫並清空現有資料
       showLoading();
-      console.log('正在從發布的 Google Sheets 載入航班資料...');
-      
       updateProgress(10, '連接 Google Sheets...');
       
       fetch(SHEETS_CSV_URL)
         .then(response => {
-          console.log('CSV 回應狀態:', response.status);
           updateProgress(30, '下載資料...');
           
           if (!response.ok) {
@@ -409,13 +392,8 @@
           return response.text();
         })
         .then(csvText => {
-          console.log('CSV 資料載入成功，長度:', csvText.length);
-          console.log('CSV 內容預覽:', csvText.substring(0, 300));
           updateProgress(60, '解析 CSV 資料...');
-          
-          // 解析 CSV 資料
           const flights = parseCSVToFlights(csvText);
-          console.log(`解析完成，找到 ${flights.length} 筆航班資料:`, flights);
           
           if (flights.length === 0) {
             throw new Error('解析後沒有找到任何航班資料');
@@ -446,7 +424,6 @@
         })
         .catch(error => {
           console.error('Google Sheets CSV 載入失敗:', error);
-          console.log('使用的 CSV URL:', SHEETS_CSV_URL);
           hideLoading();
           
           // 提供更詳細的錯誤訊息和解決方案
@@ -569,33 +546,6 @@
           <button onclick="loadFlightsFromGAS()" style="margin-top:16px;padding:8px 16px;background:#1d4ed8;color:white;border:none;border-radius:6px;cursor:pointer;">重新載入</button>
         </div>
       `;
-    }
-    
-    // 測試直接 CSV 連結
-    function testDirectCSV() {
-      console.log('測試 CSV 連結:', SHEETS_CSV_URL);
-      
-      fetch(SHEETS_CSV_URL)
-        .then(response => {
-          if (response.ok) {
-            return response.text();
-          }
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        })
-        .then(csvText => {
-          const lines = csvText.split('\n');
-          const preview = lines.slice(0, 5).join('\n');
-          console.log('CSV 測試成功:', csvText.substring(0, 200));
-          
-          alert(`✅ CSV 連結測試成功！\n\n資料預覽:\n${preview}\n\n總行數: ${lines.length}\n\n如果看到航班資料，請點擊「重新載入」`);
-        })
-        .catch(error => {
-          console.error('CSV 測試失敗:', error);
-          alert(`❌ CSV 連結測試失敗\n\n錯誤: ${error.message}\n\n請確認：\n1. Google Sheets 已發布到網路\n2. 網路連線正常\n3. 嘗試在新視窗直接開啟 CSV 連結`);
-          
-          // 自動開啟 CSV 連結讓用戶檢查
-          window.open(SHEETS_CSV_URL, '_blank');
-        });
     }
     
     // 更新日曆顯示
@@ -834,8 +784,6 @@
         }
       }, { passive: true });
 
-      // 載入完成後收回指示器（在 stopRefreshSpin 之後）
-      const origStop = stopRefreshSpin;
       window._ptrHide = function() {
         indicator.classList.remove('spinning');
         indicator.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
@@ -845,22 +793,14 @@
     })();
     // ─────────────────────────────────────────────────────────────
 
-    // 頁面載入時自動載入資料
     document.addEventListener('DOMContentLoaded', () => {
-      console.log('DOM 載入完成，強制使用 API 載入航班資料');
-      
-      // 移除靜態資料檢測，強制使用 API
       loadFlightsFromGAS();
     });
     
-    // 備用：如果 DOMContentLoaded 沒觸發，使用 window.onload
     window.addEventListener('load', () => {
-      console.log('Window 載入完成');
-      // 檢查載入動畫是否還在顯示
       setTimeout(() => {
         const loadingModal = document.getElementById('loadingModal');
         if (loadingModal && loadingModal.classList.contains('show')) {
-          console.log('載入動畫仍在顯示，嘗試自動關閉');
           hideLoading();
           
           // 顯示提示訊息
