@@ -403,6 +403,11 @@
             updateCalendarWithFlights(formattedFlights);
             updateFlightList(formattedFlights);
             hideLoading();
+            // 捲動到今日
+            const todayCell = document.getElementById('today');
+            if (todayCell) {
+              todayCell.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
           }, 100);
           
         })
@@ -766,6 +771,7 @@
         if (hasFlights) cellClass += ' has-event';
         if (isToday) cellClass += ' today';
         cell.className = cellClass;
+        if (isToday) cell.id = 'today';
         
         const dateDiv = document.createElement('div');
         dateDiv.className = isToday ? 'date today' : 'date';
