@@ -1,4 +1,4 @@
-const CACHE_NAME = 'flight-calendar-v1';
+const CACHE_NAME = 'flight-calendar-v3';
 const STATIC_ASSETS = [
   './',
   './index.html',
