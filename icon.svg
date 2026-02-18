@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="100" fill="#1d4ed8"/>
+  <g fill="#ffffff">
+    <!-- Airplane body -->
+    <path d="M256 120 L310 260 L440 280 L420 310 L305 295 L295 395 L330 415 L325 435 L256 410 L187 435 L182 415 L217 395 L207 295 L92 310 L72 280 L202 260 Z"/>
+  </g>
+</svg>

@@ -5,6 +5,13 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>飛行行事曆</title>
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#1d4ed8" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="My Flights" />
+<link rel="apple-touch-icon" href="icon.svg" />
 <style>
   :root{
     --bg:#ffffff; --text:#111827; --muted:#6b7280; --line:#e5e7eb;
@@ -796,6 +803,13 @@
     document.addEventListener('DOMContentLoaded', () => {
       loadFlightsFromGAS();
     });
+
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').catch(err => {
+        console.warn('Service Worker registration failed:', err);
+      });
+    }
     
     window.addEventListener('load', () => {
       setTimeout(() => {
