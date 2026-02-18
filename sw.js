@@ -26,7 +26,12 @@ self.addEventListener('fetch', (event) => {
 
   // Network-only for Google Sheets CSV (live data)
   if (url.hostname.includes('google.com') || url.hostname.includes('googleapis.com')) {
-    event.respondWith(fetch(event.request));
+    event.respondWith(
+      fetch(event.request).catch(err => new Response('Network error', {
+        status: 503,
+        statusText: 'Network unavailable'
+      }))
+    );
     return;
   }
 
@@ -38,7 +43,10 @@ self.addEventListener('fetch', (event) => {
         const clone = response.clone();
         caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
         return response;
-      });
+      }).catch(() => new Response('Network error', {
+        status: 503,
+        statusText: 'Network unavailable'
+      }));
     })
   );
 });

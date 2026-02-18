@@ -397,9 +397,15 @@
           console.error('Google Sheets CSV 載入失敗:', error);
           hideLoading();
 
+          const isNetworkError =
+            error.message.includes('Failed to fetch') ||
+            error.message.includes('Load failed') ||
+            error.message.includes('NetworkError') ||
+            error.message.includes('FetchEvent.respondWith');
+
           if (error.name === 'AbortError') {
             showConnectionError('連線逾時（20 秒），請檢查網路後重試。');
-          } else if (error.message.includes('Failed to fetch')) {
+          } else if (isNetworkError) {
             showConnectionError('網路連線失敗，無法存取 Google Sheets。\n請確認網路連線後重試。');
           } else {
             showConnectionError(`載入錯誤: ${error.message}`);
