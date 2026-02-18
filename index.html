@@ -801,6 +801,11 @@
       navigator.serviceWorker.register('./sw.js').catch(err => {
         console.warn('Service Worker registration failed:', err);
       });
+      // When the SW takes control for the first time (or updates), reload once
+      // so the page is fully SW-controlled from the start.
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        window.location.reload();
+      });
     }
     
   </script>
