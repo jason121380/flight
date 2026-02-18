@@ -74,11 +74,8 @@
   .modal-body .meta{font-size:13px;color:#6b7280;margin-bottom:4px}
   .modal-body .time-detail{font-size:13px;color:#374151}
   
-  /* 載入動畫彈窗 */
-  .loading-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.45);z-index:60;display:none;align-items:center;justify-content:center}
-  .loading-overlay.show{display:flex}
-  .loading-content{background:#fff;border-radius:24px;padding:32px 28px;width:200px;text-align:center;box-shadow:0 20px 40px rgba(0,0,0,0.25);animation:popIn 0.2s ease}
-  @keyframes popIn{from{transform:scale(0.85);opacity:0}to{transform:scale(1);opacity:1}}
+  /* 內嵌 loading（不蓋住 header）*/
+  .inline-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 90px);padding:40px}
   .loading-text{font-size:13px;color:#6b7280;font-weight:500;margin-top:14px}
   /* 圓形進度環 */
   .circle-progress{position:relative;width:80px;height:80px;margin:0 auto}
@@ -141,19 +138,6 @@
     </div>
   </div>
   
-  <!-- 載入動畫 -->
-  <div id="loadingModal" class="loading-overlay">
-    <div class="loading-content">
-      <div class="circle-progress">
-        <svg viewBox="0 0 80 80" width="80" height="80">
-          <circle class="cp-track" cx="40" cy="40" r="34"/>
-          <circle class="cp-ring" id="progressRing" cx="40" cy="40" r="34"/>
-        </svg>
-        <div class="cp-pct" id="progressPct">0%</div>
-      </div>
-      <div class="loading-text" id="progressText">正在連接...</div>
-    </div>
-  </div>
   <script>
     // 直接使用發布到網路的 CSV 連結
     const SHEETS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQqkpj4xzdNRa2qC30VjkGq-eLJcbrv-hPRKa6si93WEFsekexY4EYXnPiZJVWldHRHrG4lR-cyKBbP/pub?gid=665636533&single=true&output=csv';
@@ -259,20 +243,24 @@
       if (window._ptrHide) window._ptrHide();
     }
 
-    // 顯示載入動畫
+    // 顯示載入動畫（注入 calendar-wrap，header 保持可見）
     function showLoading() {
-      const loadingModal = document.getElementById('loadingModal');
-      loadingModal.classList.add('show');
-      startRefreshSpin();
-
-      // 清空現有內容
       const calendarWrap = document.querySelector('.calendar-wrap');
       const flightList = document.querySelector('#flightList');
-      calendarWrap.innerHTML = '';
-      flightList.querySelectorAll('.card').forEach(card => card.remove());
 
-      // 重置圓形進度
-      updateProgress(0, '正在連接...');
+      calendarWrap.innerHTML = `
+        <div class="inline-loading">
+          <div class="circle-progress">
+            <svg viewBox="0 0 80 80" width="80" height="80">
+              <circle class="cp-track" cx="40" cy="40" r="34"/>
+              <circle class="cp-ring" id="progressRing" cx="40" cy="40" r="34"/>
+            </svg>
+            <div class="cp-pct" id="progressPct">0%</div>
+          </div>
+          <div class="loading-text" id="progressText">正在連接...</div>
+        </div>`;
+      flightList.querySelectorAll('.card').forEach(card => card.remove());
+      startRefreshSpin();
 
       // 模擬進度動畫
       let progress = 0;
@@ -301,28 +289,13 @@
       if (text && message) text.textContent = message;
     }
     
-    // 隱藏載入動畫
+    // 隱藏載入動畫（calendar-wrap 已由 updateCalendarWithFlights 覆蓋）
     function hideLoading() {
-      const loadingModal = document.getElementById('loadingModal');
-      if (!loadingModal) return;
-      
-      // 清除進度條定時器
       if (progressInterval) {
         clearInterval(progressInterval);
         progressInterval = null;
       }
-      
-      // 快速完成進度條動畫
-      updateProgress(100, '載入完成！');
-      
-      loadingModal.classList.remove('show');
       stopRefreshSpin();
-
-      setTimeout(() => {
-        if (loadingModal.classList.contains('show')) {
-          loadingModal.style.display = 'none';
-        }
-      }, 100);
     }
     
     // 前端時間格式化函數（備援）
