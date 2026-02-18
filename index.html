@@ -23,11 +23,23 @@
   /* ── Header ─────────────────────────────────────────────── */
   header{position:sticky;top:0;z-index:30;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 14px;height:var(--header-h);box-sizing:border-box}
   header h1{margin:0;font-size:18px}
+  .header-btns{display:flex;align-items:center;gap:6px}
   .refresh-btn{background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;opacity:0.7;transition:opacity 0.2s}
   .refresh-btn:hover{opacity:1}
-  .refresh-btn:disabled{opacity:0.3;cursor:default}
-  .refresh-btn.spinning svg{animation:refresh-spin 0.8s linear infinite}
   .refresh-btn:disabled{opacity:0.7;cursor:default}
+  .refresh-btn.spinning svg{animation:refresh-spin 0.8s linear infinite}
+  .add-btn{background:#1d4ed8;border:none;cursor:pointer;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;line-height:1;padding:0;flex-shrink:0}
+  .add-btn:active{background:#1e40af}
+  /* ── Add-flight form ─────────────────────────────────────── */
+  .form-group{margin-bottom:14px}
+  .form-label{display:block;font-size:12px;color:#6b7280;margin-bottom:5px;font-weight:500}
+  .form-input{width:100%;border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:14px;color:var(--text);background:#fff;box-sizing:border-box;outline:none;-webkit-appearance:none;appearance:none;font-family:inherit}
+  .form-input:focus{border-color:#1d4ed8;box-shadow:0 0 0 3px rgba(29,78,216,0.1)}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .btn-submit{width:100%;padding:13px;background:#1d4ed8;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;margin-top:6px;font-family:inherit}
+  .btn-submit:active{background:#1e40af}
+  .btn-submit:disabled{opacity:0.6;cursor:default}
+  .add-modal .modal-content{max-height:calc(100vh - 60px);overflow-y:auto}
   @keyframes refresh-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
   .list-spinner{width:36px;height:36px;border:4px solid #e5e7eb;border-top-color:#1d4ed8;border-radius:50%;animation:refresh-spin 0.7s linear infinite;margin:0 auto}
 
@@ -113,14 +125,17 @@
 
   <header>
     <h1>My Flights</h1>
-    <button id="refreshBtn" class="refresh-btn" aria-label="重新整理">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M3 12a9 9 0 0 1 15-6.7L21 8"/>
-        <path d="M21 3v5h-5"/>
-        <path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
-        <path d="M3 21v-5h5"/>
-      </svg>
-    </button>
+    <div class="header-btns">
+      <button id="addBtn" class="add-btn" aria-label="新增航班">+</button>
+      <button id="refreshBtn" class="refresh-btn" aria-label="重新整理">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 12a9 9 0 0 1 15-6.7L21 8"/>
+          <path d="M21 3v5h-5"/>
+          <path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
+          <path d="M3 21v-5h5"/>
+        </svg>
+      </button>
+    </div>
   </header>
 
   <!-- Calendar panel -->
@@ -176,8 +191,61 @@
     </div>
   </div>
 
+  <!-- Add flight modal -->
+  <div id="addFlightModal" class="modal-overlay add-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">新增行程</div>
+        <button class="modal-close" id="closeAddModal">×</button>
+      </div>
+      <form id="addFlightForm" autocomplete="off">
+        <div class="form-group">
+          <label class="form-label" for="f-date">日期</label>
+          <input class="form-input" type="date" id="f-date" required />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="f-airline">航空公司（中）</label>
+            <input class="form-input" type="text" id="f-airline" placeholder="長榮航空" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="f-airline-en">航空公司（英）</label>
+            <input class="form-input" type="text" id="f-airline-en" placeholder="EVA Air" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="f-departure">出發地</label>
+            <input class="form-input" type="text" id="f-departure" placeholder="台北桃園" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="f-arrival">目的地</label>
+            <input class="form-input" type="text" id="f-arrival" placeholder="東京成田" required />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="f-dept-time">起飛時間</label>
+            <input class="form-input" type="time" id="f-dept-time" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="f-arr-time">抵達時間</label>
+            <input class="form-input" type="time" id="f-arr-time" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="f-flight-no">航班號</label>
+          <input class="form-input" type="text" id="f-flight-no" placeholder="BR171" required />
+        </div>
+        <div id="addFormMsg" style="font-size:13px;margin-bottom:10px;display:none"></div>
+        <button class="btn-submit" type="submit" id="addSubmitBtn">新增行程</button>
+      </form>
+    </div>
+  </div>
+
   <script>
     const SHEETS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQqkpj4xzdNRa2qC30VjkGq-eLJcbrv-hPRKa6si93WEFsekexY4EYXnPiZJVWldHRHrG4lR-cyKBbP/pub?gid=665636533&single=true&output=csv';
+    const GAS_WRITE_URL = ''; // ← 部署 gas.js 後填入 Apps Script 網址
 
     let isLoading = false;
     let currentPanel = 'panelCalendar';
@@ -224,7 +292,86 @@
 
     document.getElementById('closeModal').addEventListener('click', hideModal);
     modal.addEventListener('click', e => { if (e.target === modal) hideModal(); });
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') hideModal(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { hideModal(); hideAddModal(); } });
+
+    // ── Add-flight modal ──────────────────────────────────────────
+    const addModal = document.getElementById('addFlightModal');
+
+    function showAddModal() {
+      // default date to today
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth()+1).padStart(2,'0');
+      const dd = String(today.getDate()).padStart(2,'0');
+      document.getElementById('f-date').value = `${yyyy}-${mm}-${dd}`;
+      document.getElementById('addFlightForm').reset();
+      document.getElementById('f-date').value = `${yyyy}-${mm}-${dd}`;
+      setAddMsg('', '');
+      document.getElementById('addSubmitBtn').disabled = false;
+      addModal.classList.add('show');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function hideAddModal() {
+      addModal.classList.remove('show');
+      document.body.style.overflow = '';
+    }
+
+    function setAddMsg(text, type) {
+      const el = document.getElementById('addFormMsg');
+      el.textContent = text;
+      el.style.display = text ? 'block' : 'none';
+      el.style.color = type === 'error' ? '#ef4444' : '#16a34a';
+      el.style.background = type === 'error' ? '#fef2f2' : '#f0fdf4';
+      el.style.border = `1px solid ${type === 'error' ? '#fecaca' : '#bbf7d0'}`;
+      el.style.borderRadius = '8px';
+      el.style.padding = '8px 12px';
+    }
+
+    document.getElementById('addBtn').addEventListener('click', showAddModal);
+    document.getElementById('closeAddModal').addEventListener('click', hideAddModal);
+    addModal.addEventListener('click', e => { if (e.target === addModal) hideAddModal(); });
+
+    document.getElementById('addFlightForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      if (!GAS_WRITE_URL) {
+        setAddMsg('尚未設定 GAS_WRITE_URL，請先部署 gas.js 並填入網址。', 'error');
+        return;
+      }
+      const submitBtn = document.getElementById('addSubmitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = '新增中...';
+      setAddMsg('', '');
+
+      const payload = {
+        date:       document.getElementById('f-date').value,
+        airline:    document.getElementById('f-airline').value.trim(),
+        airlineEn:  document.getElementById('f-airline-en').value.trim(),
+        departure:  document.getElementById('f-departure').value.trim(),
+        arrival:    document.getElementById('f-arrival').value.trim(),
+        deptTime:   document.getElementById('f-dept-time').value,
+        arrTime:    document.getElementById('f-arr-time').value,
+        flightNo:   document.getElementById('f-flight-no').value.trim()
+      };
+
+      try {
+        await fetch(GAS_WRITE_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        setAddMsg('新增成功！正在重新載入...', 'ok');
+        setTimeout(() => {
+          hideAddModal();
+          loadFlightsFromGAS();
+        }, 1000);
+      } catch (err) {
+        setAddMsg('送出失敗：' + err.message, 'error');
+        submitBtn.disabled = false;
+        submitBtn.textContent = '新增行程';
+      }
+    });
 
     // ── Loading ───────────────────────────────────────────────────
     let progressInterval;
