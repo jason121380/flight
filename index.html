@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="zh-Hant">
 <head>
@@ -16,269 +15,231 @@
   :root{
     --bg:#ffffff; --text:#111827; --muted:#6b7280; --line:#e5e7eb;
     --event:#eef2ff; --brand:#1d4ed8; --card:#f9fafb;
+    --header-h:44px; --nav-h:56px;
   }
   html,body{background:var(--bg);color:var(--text);margin:0}
   body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang TC","Noto Sans TC",Roboto,"Helvetica Neue",Arial,"Microsoft JhengHei",sans-serif}
-  header{position:sticky;top:0;z-index:30;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:10px 14px}
+
+  /* ── Header ─────────────────────────────────────────────── */
+  header{position:sticky;top:0;z-index:30;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 14px;height:var(--header-h);box-sizing:border-box}
   header h1{margin:0;font-size:18px}
-  .list-btn{font-size:20px;background:none;border:none;cursor:pointer;display:none}
   .refresh-btn{background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;opacity:0.7;transition:opacity 0.2s}
   .refresh-btn:hover{opacity:1}
   .refresh-btn:disabled{opacity:0.3;cursor:default}
-  .container{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:3fr 1fr;gap:0;min-height:calc(100vh - 44px)}
-  .calendar-wrap{padding:10px}
+
+  /* ── Panels ─────────────────────────────────────────────── */
+  .panel{display:none;padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px))}
+  .panel.active{display:block}
+
+  /* ── Calendar ───────────────────────────────────────────── */
+  .calendar-wrap{padding:0}
   .month{border-top:1px solid var(--line)}
   .month:first-of-type{border-top:none}
-  .month-header{position:sticky;top:44px;background:rgba(255,255,255,.95);backdrop-filter:saturate(180%) blur(8px);border-bottom:1px solid var(--line);padding:8px 6px;z-index:10}
+  .month-header{position:sticky;top:var(--header-h);background:rgba(255,255,255,.95);backdrop-filter:saturate(180%) blur(8px);border-bottom:1px solid var(--line);padding:8px 10px;z-index:10}
   .month-header h2{margin:0;font-size:16px}
   .grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
   .grid.header>div{padding:6px;text-align:center;font-size:11px;color:#6b7280;border-bottom:1px solid var(--line);border-right:1px solid var(--line);background:#fafafa}
   .grid.header>div:nth-child(7n){border-right:none}
-  .cell{min-height:96px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:6px;display:flex;flex-direction:column;gap:6px;background:#fff}
+  .cell{min-height:80px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:5px;display:flex;flex-direction:column;gap:4px;background:#fff}
   .cell:nth-child(7n){border-right:none}
   .cell.blank{background:#fff}
   .date{font-size:12px;color:#9ca3af}
-  .date.today{background:#1d4ed8;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:600}
+  .date.today{background:#1d4ed8;color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:11px}
   .cell.today{background:linear-gradient(135deg,#f0f7ff 0%,#e0f0ff 100%)}
-  .event{background:var(--event);border:1px solid #c7d2fe;border-radius:10px;padding:6px 8px;line-height:1.25;word-wrap:break-word;overflow-wrap:break-word;min-width:0}
-  .event .airline{font-weight:700;font-size:12px;color:#4338ca}
-  .event .route{font-size:12px;margin-top:2px}
-  .event .meta{font-size:11px;color:#374151;margin-top:2px}
-  .has-event{background:linear-gradient(180deg,#ffffff 0%,#ffffff 70%,#f3f6ff 100%)}
+  .event{background:var(--event);border:1px solid #c7d2fe;border-radius:7px;padding:4px 5px;line-height:1.3;word-wrap:break-word;overflow-wrap:break-word;min-width:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  .event:active{background:#c7d2fe}
+  .event .etime{font-weight:700;font-size:11px;color:#4338ca}
+  .event .eroute{font-size:11px;color:#374151;margin-top:1px}
+  .event-full{display:none}
+  .has-event{background:linear-gradient(180deg,#ffffff 0%,#ffffff 65%,#f3f6ff 100%)}
   .cell.today.has-event{background:linear-gradient(135deg,#f0f7ff 0%,#e0f0ff 100%)}
-  /* 右側列表 */
-  aside.flight-list{border-left:1px solid var(--line);background:#fff;padding:12px;position:sticky;top:44px;height:calc(100vh - 44px);overflow:hidden;display:flex;flex-direction:column}
-  .flight-list h2{font-size:16px;margin:0 0 10px;flex-shrink:0}
-  /* Tab bar */
-  .fl-tabs{display:flex;border-bottom:1px solid var(--line);margin-bottom:10px;flex-shrink:0}
-  .fl-tab{flex:1;padding:7px 0;font-size:13px;text-align:center;cursor:pointer;color:#6b7280;border-bottom:2px solid transparent;margin-bottom:-1px;background:none;border-top:none;border-left:none;border-right:none}
-  .fl-tab.active{color:#1d4ed8;border-bottom-color:#1d4ed8;font-weight:600}
-  .fl-tab-count{display:inline-block;font-size:11px;padding:1px 5px;border-radius:999px;background:#f3f4f6;color:#6b7280;margin-left:4px;font-weight:400}
-  .fl-tab.active .fl-tab-count{background:#dbeafe;color:#1d4ed8}
-  .fl-tab-panel{display:none;overflow-y:auto;flex:1}
-  .fl-tab-panel.active{display:block}
-  .flight-list .card{display:block;text-decoration:none;color:inherit;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:10px 12px;margin-bottom:10px}
-  .flight-list .card:hover{background:#eef2ff;border-color:#c7d2fe}
-  .flight-list .card.departed{opacity:0.5}
-  .flight-list .date-tag{font-size:12px;color:#6b7280;margin-bottom:2px}
-  .flight-list .airline{font-weight:600;color:#1d4ed8;font-size:13px}
-  .flight-list .route{font-size:13px;margin-top:2px}
-  .flight-list .meta{font-size:12px;color:#374151;margin-top:2px}
-  /* 手機版事件簡化顯示 */
-  .event-compact{display:none}
-  .event-full{display:block}
-  
-  /* 彈窗樣式 */
+
+  /* ── List panels ────────────────────────────────────────── */
+  .list-wrap{padding:12px}
+  .lcard{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:12px 14px;margin-bottom:10px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background 0.15s}
+  .lcard:active{background:#eef2ff;border-color:#c7d2fe}
+  .lcard.departed{opacity:0.5}
+  .lcard .date-tag{font-size:12px;color:#6b7280;margin-bottom:3px}
+  .lcard .airline{font-weight:600;color:#1d4ed8;font-size:14px}
+  .lcard .route{font-size:13px;margin-top:3px}
+  .lcard .meta{font-size:12px;color:#374151;margin-top:3px}
+  .list-empty{padding:48px 20px;text-align:center;color:#6b7280;font-size:14px}
+
+  /* ── Bottom nav ─────────────────────────────────────────── */
+  .bottom-nav{position:fixed;bottom:0;left:0;right:0;height:calc(var(--nav-h) + env(safe-area-inset-bottom,0px));background:#fff;border-top:1px solid var(--line);display:flex;z-index:30}
+  .bn-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:none;border:none;cursor:pointer;font-size:10px;color:#6b7280;gap:3px;position:relative;padding:0 0 env(safe-area-inset-bottom,0px);-webkit-tap-highlight-color:transparent}
+  .bn-item.active{color:var(--brand)}
+  .bn-item svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .bn-badge{position:absolute;top:5px;right:calc(50% - 22px);min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:#ef4444;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;box-sizing:border-box}
+  .bn-badge[data-count="0"]{display:none}
+
+  /* ── Modal ──────────────────────────────────────────────── */
   .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:50;display:none;align-items:center;justify-content:center;padding:20px;box-sizing:border-box}
   .modal-overlay.show{display:flex}
   .modal-content{background:#fff;border-radius:16px;padding:20px;width:100%;max-width:320px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1),0 10px 10px -5px rgba(0,0,0,0.04);transform:scale(0.9);transition:transform 0.2s ease}
   .modal-overlay.show .modal-content{transform:scale(1)}
   .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--line)}
   .modal-title{font-size:16px;font-weight:600;color:var(--text)}
-  .modal-close{background:none;border:none;font-size:24px;color:#9ca3af;cursor:pointer;padding:0;width:24px;height:24px;display:flex;align-items:center;justify-content:center}
+  .modal-close{background:none;border:none;font-size:24px;color:#9ca3af;cursor:pointer;padding:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center}
   .modal-close:hover{color:var(--text)}
-  .modal-body .airline{font-weight:600;color:#1d4ed8;font-size:14px;margin-bottom:8px}
-  .modal-body .route{font-size:14px;margin-bottom:8px;color:var(--text)}
-  .modal-body .meta{font-size:13px;color:#6b7280;margin-bottom:4px}
-  .modal-body .time-detail{font-size:13px;color:#374151}
-  
-  /* 內嵌 loading（不蓋住 header）*/
-  .inline-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 90px);padding:40px}
+  .modal-body .m-airline{font-weight:600;color:#1d4ed8;font-size:15px;margin-bottom:8px}
+  .modal-body .m-route{font-size:14px;margin-bottom:6px;color:var(--text)}
+  .modal-body .m-meta{font-size:13px;color:#6b7280;margin-bottom:4px}
+
+  /* ── Loading ────────────────────────────────────────────── */
+  .inline-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 120px);padding:40px}
   .loading-text{font-size:13px;color:#6b7280;font-weight:500;margin-top:14px}
-  /* 圓形進度環 */
   .circle-progress{position:relative;width:80px;height:80px;margin:0 auto}
   .circle-progress svg{transform:rotate(-90deg)}
   .cp-track{fill:none;stroke:#e5e7eb;stroke-width:6}
   .cp-ring{fill:none;stroke:#1d4ed8;stroke-width:6;stroke-linecap:round;stroke-dasharray:213.6;stroke-dashoffset:213.6;transition:stroke-dashoffset 0.25s ease}
   .cp-pct{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:17px;font-weight:700;color:#1d4ed8;line-height:1}
-  
-  /* 下拉刷新指示器 */
-  .ptr-indicator{position:fixed;top:44px;left:50%;transform:translateX(-50%) translateY(-60px);width:40px;height:40px;background:#fff;border:1px solid var(--line);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 2px 8px rgba(0,0,0,0.15);transition:transform 0.25s ease,opacity 0.25s ease;z-index:25;pointer-events:none;opacity:0}
-  .ptr-indicator.visible{opacity:1}
-  .ptr-indicator.spinning{animation:spin 0.8s linear infinite;transform:translateX(-50%) translateY(10px) !important;opacity:1}
 
-  /* 手機：列表改為抽屜，icon 顯示 */
-  @media(max-width:768px){
-    .container{grid-template-columns:1fr}
-    .list-btn{display:block}
-    aside.flight-list{position:fixed;top:0;right:-100%;width:80%;max-width:340px;height:100vh;border-left:1px solid var(--line);box-shadow:-4px 0 16px rgba(0,0,0,.2);transition:right .28s ease;background:#fff;z-index:40}
-    aside.flight-list.open{right:0}
-    .month-header{top:44px}
-    
-    /* 手機版事件簡化顯示 */
-    .event{cursor:pointer;transition:all 0.2s ease}
-    .event-compact{display:block;font-size:11px}
-    .event-full{display:none}
-    .event-compact .time{font-weight:600;color:#4338ca}
-    .event-compact .route{margin-top:1px;color:#374151}
+  /* ── Pull-to-refresh ────────────────────────────────────── */
+  .ptr-indicator{position:fixed;top:var(--header-h);left:50%;transform:translateX(-50%) translateY(-60px);width:40px;height:40px;background:#fff;border:1px solid var(--line);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 2px 8px rgba(0,0,0,0.15);z-index:25;pointer-events:none;opacity:0}
+  .ptr-indicator.spinning{animation:ptr-spin 0.8s linear infinite}
+  @keyframes ptr-spin{
+    from{transform:translateX(-50%) translateY(10px) rotate(0deg)}
+    to{transform:translateX(-50%) translateY(10px) rotate(360deg)}
   }
 </style>
 </head>
 <body>
-  <!-- 下拉刷新指示器 -->
   <div id="ptrIndicator" class="ptr-indicator">🔄</div>
+
   <header>
     <h1>My Flights</h1>
-    <div style="display:flex;align-items:center;gap:8px">
-      <button id="refreshBtn" class="refresh-btn" aria-label="重新整理">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 12a9 9 0 0 1 15-6.7L21 8"/>
-          <path d="M21 3v5h-5"/>
-          <path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
-          <path d="M3 21v-5h5"/>
-        </svg>
-      </button>
-      <button id="toggleList" class="list-btn" aria-label="切換清單">☰</button>
-    </div>
+    <button id="refreshBtn" class="refresh-btn" aria-label="重新整理">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 12a9 9 0 0 1 15-6.7L21 8"/>
+        <path d="M21 3v5h-5"/>
+        <path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
+        <path d="M3 21v-5h5"/>
+      </svg>
+    </button>
   </header>
-  <div class="container">
-    <div class="calendar-wrap">
-      <!-- 日曆將由 API 動態生成 -->
-    </div>
-    <aside id="flightList" class="flight-list">
-      <h2>航班清單</h2>
-      <div class="fl-tabs">
-        <button class="fl-tab active" data-tab="upcoming">待出發<span class="fl-tab-count" id="upcomingCount">0</span></button>
-        <button class="fl-tab" data-tab="departed">已出發<span class="fl-tab-count" id="departedCount">0</span></button>
-      </div>
-      <div class="fl-tab-panel active" id="tabUpcoming"></div>
-      <div class="fl-tab-panel" id="tabDeparted"></div>
-    </aside>
+
+  <!-- Calendar panel -->
+  <div id="panelCalendar" class="panel active">
+    <div class="calendar-wrap"></div>
   </div>
-  
-  <!-- 彈窗 -->
+
+  <!-- Upcoming panel -->
+  <div id="panelUpcoming" class="panel">
+    <div class="list-wrap" id="listUpcoming"></div>
+  </div>
+
+  <!-- Departed panel -->
+  <div id="panelDeparted" class="panel">
+    <div class="list-wrap" id="listDeparted"></div>
+  </div>
+
+  <!-- Bottom nav -->
+  <nav class="bottom-nav">
+    <button class="bn-item active" data-panel="panelCalendar">
+      <svg viewBox="0 0 24 24">
+        <rect x="3" y="4" width="18" height="18" rx="2"/>
+        <line x1="16" y1="2" x2="16" y2="6"/>
+        <line x1="8" y1="2" x2="8" y2="6"/>
+        <line x1="3" y1="10" x2="21" y2="10"/>
+      </svg>
+      行事曆
+    </button>
+    <button class="bn-item" data-panel="panelUpcoming">
+      <span class="bn-badge" id="badgeUpcoming" data-count="0">0</span>
+      <svg viewBox="0 0 24 24">
+        <line x1="22" y1="2" x2="11" y2="13"/>
+        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+      </svg>
+      待出發
+    </button>
+    <button class="bn-item" data-panel="panelDeparted">
+      <span class="bn-badge" id="badgeDeparted" data-count="0">0</span>
+      <svg viewBox="0 0 24 24">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+      已出發
+    </button>
+  </nav>
+
+  <!-- Modal -->
   <div id="flightModal" class="modal-overlay">
     <div class="modal-content">
       <div class="modal-header">
         <div class="modal-title">航班詳情</div>
         <button class="modal-close" id="closeModal">×</button>
       </div>
-      <div class="modal-body" id="modalBody">
-        <!-- 動態內容 -->
-      </div>
+      <div class="modal-body" id="modalBody"></div>
     </div>
   </div>
-  
+
   <script>
-    // 直接使用發布到網路的 CSV 連結
     const SHEETS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQqkpj4xzdNRa2qC30VjkGq-eLJcbrv-hPRKa6si93WEFsekexY4EYXnPiZJVWldHRHrG4lR-cyKBbP/pub?gid=665636533&single=true&output=csv';
-    
-    const btn = document.getElementById('toggleList');
-    const list = document.getElementById('flightList');
-    const refreshBtn = document.getElementById('refreshBtn');
 
-    refreshBtn && refreshBtn.addEventListener('click', () => {
-      loadFlightsFromGAS();
-    });
-    
-    btn && btn.addEventListener('click', ()=> list.classList.toggle('open'));
+    let isLoading = false;
+    let currentPanel = 'panelCalendar';
 
-    // Tab 切換
-    document.querySelectorAll('.fl-tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        document.querySelectorAll('.fl-tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.fl-tab-panel').forEach(p => p.classList.remove('active'));
-        tab.classList.add('active');
-        document.getElementById('tab' + tab.dataset.tab.charAt(0).toUpperCase() + tab.dataset.tab.slice(1)).classList.add('active');
+    // ── Bottom nav ────────────────────────────────────────────────
+    function switchPanel(panelId) {
+      if (panelId === currentPanel) return;
+      document.getElementById(currentPanel).classList.remove('active');
+      document.getElementById(panelId).classList.add('active');
+      document.querySelectorAll('.bn-item').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.panel === panelId);
       });
+      currentPanel = panelId;
+      window.scrollTo(0, 0);
+    }
+
+    document.querySelectorAll('.bn-item').forEach(btn => {
+      btn.addEventListener('click', () => switchPanel(btn.dataset.panel));
     });
 
-    // 點擊選單外部區域關閉選單
-    document.addEventListener('click', (e) => {
-      if (window.matchMedia('(max-width: 768px)').matches && list.classList.contains('open')) {
-        // 如果點擊的不是選單本身或選單按鈕
-        if (!list.contains(e.target) && !btn.contains(e.target)) {
-          list.classList.remove('open');
-        }
-      }
-    });
-    
-    // 彈窗相關元素
+    // ── Refresh button ────────────────────────────────────────────
+    document.getElementById('refreshBtn').addEventListener('click', loadFlightsFromGAS);
+
+    // ── Modal ─────────────────────────────────────────────────────
     const modal = document.getElementById('flightModal');
     const modalBody = document.getElementById('modalBody');
-    const closeModal = document.getElementById('closeModal');
-    
-    // 手機版事件點擊顯示彈窗
-    document.addEventListener('click', (e) => {
-      if (window.matchMedia('(max-width: 768px)').matches) {
-        const event = e.target.closest('.event');
-        if (event && !e.target.closest('a')) {
-          e.preventDefault();
-          showFlightModal(event);
-        }
-      }
-    });
-    
-    // 顯示彈窗
-    function showFlightModal(eventElement) {
-      const fullContent = eventElement.querySelector('.event-full');
-      if (fullContent) {
-        modalBody.innerHTML = fullContent.innerHTML;
-        modal.classList.add('show');
-        document.body.style.overflow = 'hidden'; // 防止背景滾動
-      }
+
+    function showFlightModal(flight) {
+      modalBody.innerHTML = `
+        <div class="m-airline">${flight.airline} ${flight.airlineEn}</div>
+        <div class="m-route">${flight.departure} → ${flight.arrival}</div>
+        <div class="m-meta">${flight.date}</div>
+        <div class="m-meta">${flight.deptTime} → ${flight.arrTime}</div>
+        <div class="m-meta">航班：${flight.flightNo}</div>
+      `;
+      modal.classList.add('show');
+      document.body.style.overflow = 'hidden';
     }
-    
-    // 關閉彈窗
-    function hideFlightModal() {
+
+    function hideModal() {
       modal.classList.remove('show');
-      document.body.style.overflow = ''; // 恢復滾動
+      document.body.style.overflow = '';
     }
-    
-    // 點擊關閉按鈕
-    closeModal.addEventListener('click', hideFlightModal);
-    
-    // 點擊遮罩關閉
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) {
-        hideFlightModal();
-      }
-    });
-    
-    // 緊急關閉載入動畫的快捷鍵和點擊
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        const loadingModal = document.getElementById('loadingModal');
-        if (loadingModal && loadingModal.classList.contains('show')) {
-          hideLoading();
-        }
-      }
-    });
-    
-    // 點擊載入動畫關閉
-    document.addEventListener('click', (e) => {
-      const loadingModal = document.getElementById('loadingModal');
-      if (loadingModal && loadingModal.classList.contains('show') &&
-          (e.target === loadingModal || loadingModal.contains(e.target))) {
-        hideLoading();
-      }
-    });
-    
-    function closeListOnMobile(){
-      if (window.matchMedia('(max-width: 768px)').matches){
-        list.classList.remove('open');
-      }
-    }
-    
-    // 進度條控制
+
+    document.getElementById('closeModal').addEventListener('click', hideModal);
+    modal.addEventListener('click', e => { if (e.target === modal) hideModal(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') hideModal(); });
+
+    // ── Loading ───────────────────────────────────────────────────
     let progressInterval;
-    
-    // 重新整理按鈕狀態控制
+
     function startRefreshSpin() {
-      const refreshBtn = document.getElementById('refreshBtn');
-      if (refreshBtn) { refreshBtn.disabled = true; }
+      const btn = document.getElementById('refreshBtn');
+      if (btn) btn.disabled = true;
     }
+
     function stopRefreshSpin() {
-      const refreshBtn = document.getElementById('refreshBtn');
-      if (refreshBtn) { refreshBtn.disabled = false; }
+      const btn = document.getElementById('refreshBtn');
+      if (btn) btn.disabled = false;
       if (window._ptrHide) window._ptrHide();
     }
 
-    // 顯示載入動畫（注入 calendar-wrap，header 保持可見）
     function showLoading() {
-      const calendarWrap = document.querySelector('.calendar-wrap');
-      const flightList = document.querySelector('#flightList');
-
+      isLoading = true;
+      const calendarWrap = document.querySelector('#panelCalendar .calendar-wrap');
       calendarWrap.innerHTML = `
         <div class="inline-loading">
           <div class="circle-progress">
@@ -290,10 +251,12 @@
           </div>
           <div class="loading-text" id="progressText">正在連接...</div>
         </div>`;
-      ['tabUpcoming','tabDeparted'].forEach(id => { const el = document.getElementById(id); if(el) el.innerHTML=''; });
+      ['listUpcoming', 'listDeparted'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = '';
+      });
       startRefreshSpin();
 
-      // 模擬進度動畫
       let progress = 0;
       progressInterval = setInterval(() => {
         if (progress < 30) {
@@ -309,7 +272,6 @@
       }, 50);
     }
 
-    // 更新圓形進度環
     function updateProgress(percent, message) {
       const ring = document.getElementById('progressRing');
       const pct = document.getElementById('progressPct');
@@ -319,113 +281,53 @@
       if (pct) pct.textContent = Math.round(Math.min(percent, 100)) + '%';
       if (text && message) text.textContent = message;
     }
-    
-    // 隱藏載入動畫（calendar-wrap 已由 updateCalendarWithFlights 覆蓋）
+
     function hideLoading() {
-      if (progressInterval) {
-        clearInterval(progressInterval);
-        progressInterval = null;
-      }
+      isLoading = false;
+      if (progressInterval) { clearInterval(progressInterval); progressInterval = null; }
       stopRefreshSpin();
     }
-    
-    // 前端時間格式化函數（備援）
-    function formatTimeOnFrontend(timeStr) {
-      if (!timeStr) return '';
-      
-      // 如果已經是 HH:MM 格式，直接返回
-      if (/^\d{1,2}:\d{2}$/.test(timeStr)) {
-        return timeStr;
-      }
-      
-      // 如果是 ISO 時間格式
-      if (typeof timeStr === 'string' && timeStr.includes('T')) {
-        try {
-          const date = new Date(timeStr);
-          if (!isNaN(date.getTime())) {
-            // 對於 1899 年的日期，這是 Google Sheets 的時間格式
-            // 需要加上 8 小時來轉換為台灣時間 (UTC+8)
-            if (date.getFullYear() === 1899) {
-              const utcHours = date.getUTCHours();
-              const utcMinutes = date.getUTCMinutes();
-              
-              // 加上 8 小時轉換為台灣時間
-              let localHours = utcHours + 8;
-              let localMinutes = utcMinutes;
-              
-              // 處理跨日情況
-              if (localHours >= 24) {
-                localHours -= 24;
-              }
-              
-              return `${String(localHours).padStart(2, '0')}:${String(localMinutes).padStart(2, '0')}`;
-            } else {
-              // 正常日期使用本地時間
-              const hours = date.getHours();
-              const minutes = date.getMinutes();
-              return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-            }
-          }
-        } catch (e) {
-          console.error('前端時間格式化失敗:', e);
-        }
-      }
-      
-      return timeStr;
-    }
-    
-    // 從 Google Sheets 載入航班資料 (使用發布到網路的 CSV)
+
+    // ── Data loading ──────────────────────────────────────────────
     function loadFlightsFromGAS() {
       showLoading();
       updateProgress(10, '連接 Google Sheets...');
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 秒超時
+      const timeoutId = setTimeout(() => controller.abort(), 20000);
 
       fetch(SHEETS_CSV_URL, { signal: controller.signal })
         .then(response => {
           updateProgress(30, '下載資料...');
-          
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-          }
+          if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
           return response.text();
         })
         .then(csvText => {
           updateProgress(60, '解析 CSV 資料...');
           const flights = parseCSVToFlights(csvText);
-          
-          if (flights.length === 0) {
-            throw new Error('解析後沒有找到任何航班資料');
-          }
-          
+          if (flights.length === 0) throw new Error('解析後沒有找到任何航班資料');
           updateProgress(85, '格式化時間資料...');
-          
-          // 格式化時間
-          const formattedFlights = flights.map(flight => ({
-            ...flight,
-            deptTime: formatTimeOnFrontend(flight.deptTime),
-            arrTime: formatTimeOnFrontend(flight.arrTime)
+
+          const formattedFlights = flights.map(f => ({
+            ...f,
+            deptTime: formatTimeOnFrontend(f.deptTime),
+            arrTime: formatTimeOnFrontend(f.arrTime)
           }));
-          
+
           updateProgress(95, '生成日曆...');
-          
           clearTimeout(timeoutId);
+
           setTimeout(() => {
             updateCalendarWithFlights(formattedFlights);
             updateFlightList(formattedFlights);
             hideLoading();
-            // 捲動到今日
             const todayCell = document.getElementById('today');
-            if (todayCell) {
-              todayCell.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
+            if (todayCell) todayCell.scrollIntoView({ behavior: 'smooth', block: 'center' });
           }, 100);
-          
         })
         .catch(error => {
           clearTimeout(timeoutId);
-          console.error('Google Sheets CSV 載入失敗:', error);
+          console.error('載入失敗:', error);
           hideLoading();
 
           const isNetworkError =
@@ -437,30 +339,23 @@
           if (error.name === 'AbortError') {
             showConnectionError('連線逾時（20 秒），請檢查網路後重試。');
           } else if (isNetworkError) {
-            showConnectionError('網路連線失敗，無法存取 Google Sheets。\n請確認網路連線後重試。');
+            showConnectionError('網路連線失敗，請確認網路連線後重試。');
           } else {
             showConnectionError(`載入錯誤: ${error.message}`);
           }
         });
     }
-    
-    // 解析 CSV 資料為航班物件
+
+    // ── CSV parsing ───────────────────────────────────────────────
     function parseCSVToFlights(csvText) {
       const lines = csvText.trim().split('\n');
       const flights = [];
-      
-      // 跳過第一行（標題行）
       for (let i = 1; i < lines.length; i++) {
         const line = lines[i].trim();
         if (!line) continue;
-        
-        // 解析 CSV 行（處理逗號分隔和引號包圍的值）
         const values = parseCSVLine(line);
-        
-        // 跳過空白行
         if (!values[0]) continue;
-        
-        const flight = {
+        flights.push({
           date: formatDate(values[0]),
           airline: values[1] || '',
           departure: values[2] || '',
@@ -469,295 +364,239 @@
           arrTime: values[5] || '',
           flightNo: values[6] || '',
           airlineEn: values[7] || '',
-          // 產生簡化版本的地名
           departureShort: simplifyLocation(values[2]),
           arrivalShort: simplifyLocation(values[3])
-        };
-        
-        flights.push(flight);
+        });
       }
-      
-      // 按日期排序
       flights.sort((a, b) => new Date(a.date) - new Date(b.date));
-      
       return flights;
     }
-    
-    // 解析 CSV 行（處理逗號和引號）
+
     function parseCSVLine(line) {
       const values = [];
       let current = '';
       let inQuotes = false;
-      
       for (let i = 0; i < line.length; i++) {
         const char = line[i];
-        
-        if (char === '"') {
-          inQuotes = !inQuotes;
-        } else if (char === ',' && !inQuotes) {
-          values.push(current.trim());
-          current = '';
-        } else {
-          current += char;
-        }
+        if (char === '"') { inQuotes = !inQuotes; }
+        else if (char === ',' && !inQuotes) { values.push(current.trim()); current = ''; }
+        else { current += char; }
       }
-      
-      // 加入最後一個值
       values.push(current.trim());
-      
       return values;
     }
-    
-    // 格式化日期為 YYYY-MM-DD
+
     function formatDate(date) {
       if (!date) return '';
-      
-      // 如果已經是正確格式，直接返回
-      if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-        return date;
-      }
-      
+      if (/^\d{4}-\d{2}-\d{2}$/.test(date)) return date;
       const d = new Date(date);
       if (isNaN(d.getTime())) return date.toString();
-      
-      const year = d.getFullYear();
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      
-      return `${year}-${month}-${day}`;
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     }
-    
-    // 簡化地名函數（從 Apps Script 複製）
+
     function simplifyLocation(location) {
       if (!location) return '';
-      
-      const simplifications = {
-        '台北桃園': '桃園',
-        '台北松山': '松山',
-        '上海浦東': '浦東',
-        '上海虹橋': '虹橋',
-        '首爾仁川': '仁川',
-        '首爾金浦': '金浦'
-      };
-      
-      return simplifications[location] || location;
+      const m = {'台北桃園':'桃園','台北松山':'松山','上海浦東':'浦東','上海虹橋':'虹橋','首爾仁川':'仁川','首爾金浦':'金浦'};
+      return m[location] || location;
     }
-    
-    // 顯示連線錯誤
-    function showConnectionError(errorMessage = '') {
-      const calendarWrap = document.querySelector('.calendar-wrap');
 
-      calendarWrap.innerHTML = `
-        <div style="text-align:center;padding:40px;color:#ef4444;">
-          <div style="font-size:18px;margin-bottom:8px;">載入失敗</div>
-          <div style="font-size:14px;color:#6b7280;margin-bottom:16px;">無法從 Google Sheets 載入航班資料</div>
-          ${errorMessage ? `<div style="font-size:13px;color:#ef4444;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;margin-top:8px;white-space:pre-wrap;text-align:left;">${errorMessage}</div>` : ''}
-          <button onclick="loadFlightsFromGAS()" style="margin-top:16px;padding:8px 16px;background:#1d4ed8;color:white;border:none;border-radius:6px;cursor:pointer;">重新載入</button>
-        </div>
-      `;
+    function formatTimeOnFrontend(timeStr) {
+      if (!timeStr) return '';
+      if (/^\d{1,2}:\d{2}$/.test(timeStr)) return timeStr;
+      if (typeof timeStr === 'string' && timeStr.includes('T')) {
+        try {
+          const date = new Date(timeStr);
+          if (!isNaN(date.getTime())) {
+            if (date.getFullYear() === 1899) {
+              let h = date.getUTCHours() + 8;
+              if (h >= 24) h -= 24;
+              return `${String(h).padStart(2,'0')}:${String(date.getUTCMinutes()).padStart(2,'0')}`;
+            } else {
+              return `${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
+            }
+          }
+        } catch(e) {}
+      }
+      return timeStr;
     }
-    
-    // 更新日曆顯示
+
+    // ── Calendar ──────────────────────────────────────────────────
     function updateCalendarWithFlights(flights) {
-      // 清除現有的日曆
-      const calendarWrap = document.querySelector('.calendar-wrap');
+      const calendarWrap = document.querySelector('#panelCalendar .calendar-wrap');
       calendarWrap.innerHTML = '';
-      
       if (flights.length === 0) {
         calendarWrap.innerHTML = '<p style="text-align:center;padding:40px;color:#6b7280;">目前沒有航班資料</p>';
         return;
       }
-      
-      // 按月份分組航班
       const flightsByMonth = {};
-      flights.forEach(flight => {
-        const monthKey = flight.date.substring(0, 7); // YYYY-MM
-        if (!flightsByMonth[monthKey]) {
-          flightsByMonth[monthKey] = [];
-        }
-        flightsByMonth[monthKey].push(flight);
+      flights.forEach(f => {
+        const k = f.date.substring(0, 7);
+        if (!flightsByMonth[k]) flightsByMonth[k] = [];
+        flightsByMonth[k].push(f);
       });
-      
-      // 按時間順序排序月份
-      const sortedMonths = Object.keys(flightsByMonth).sort();
-      
-      // 為每個有航班的月份生成日曆
-      sortedMonths.forEach(monthKey => {
-        const monthFlights = flightsByMonth[monthKey];
+      Object.keys(flightsByMonth).sort().forEach(monthKey => {
         const [year, month] = monthKey.split('-');
-        const monthSection = generateMonthCalendar(parseInt(year), parseInt(month), monthFlights);
-        calendarWrap.appendChild(monthSection);
+        calendarWrap.appendChild(generateMonthCalendar(parseInt(year), parseInt(month), flightsByMonth[monthKey]));
       });
     }
-    
-    // 生成單月日曆
+
     function generateMonthCalendar(year, month, flights) {
-      const monthNames = ['', '一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
+      const monthNames = ['','一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
       const daysInMonth = new Date(year, month, 0).getDate();
-      const firstDay = new Date(year, month - 1, 1).getDay(); // 0=Sunday, 1=Monday, ...
-      
-      // 建立航班索引
+      const firstDay = new Date(year, month - 1, 1).getDay();
+
       const flightsByDate = {};
-      flights.forEach(flight => {
-        const day = parseInt(flight.date.split('-')[2]);
-        if (!flightsByDate[day]) {
-          flightsByDate[day] = [];
-        }
-        flightsByDate[day].push(flight);
+      flights.forEach(f => {
+        const day = parseInt(f.date.split('-')[2]);
+        if (!flightsByDate[day]) flightsByDate[day] = [];
+        flightsByDate[day].push(f);
       });
-      
+
       const section = document.createElement('section');
       section.className = 'month';
-      section.id = `m-${year}-${String(month).padStart(2, '0')}`;
-      
-      // 月份標題
-      const header = document.createElement('header');
-      header.className = 'month-header';
-      header.innerHTML = `<h2>${year} 年 ${monthNames[month]}</h2>`;
-      section.appendChild(header);
-      
-      // 星期標題
-      const weekHeader = document.createElement('div');
-      weekHeader.className = 'grid header';
-      weekHeader.innerHTML = '<div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>';
-      section.appendChild(weekHeader);
-      
-      // 日期格子
+      section.id = `m-${year}-${String(month).padStart(2,'0')}`;
+
+      const hdr = document.createElement('header');
+      hdr.className = 'month-header';
+      hdr.innerHTML = `<h2>${year} 年 ${monthNames[month]}</h2>`;
+      section.appendChild(hdr);
+
+      const weekHdr = document.createElement('div');
+      weekHdr.className = 'grid header';
+      weekHdr.innerHTML = '<div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>';
+      section.appendChild(weekHdr);
+
       const bodyGrid = document.createElement('div');
       bodyGrid.className = 'grid body';
-      
-      // 前面的空白格子
+
       for (let i = 0; i < firstDay; i++) {
-        const blankCell = document.createElement('div');
-        blankCell.className = 'cell blank';
-        bodyGrid.appendChild(blankCell);
+        const blank = document.createElement('div');
+        blank.className = 'cell blank';
+        bodyGrid.appendChild(blank);
       }
-      
-      // 取得今天的日期
+
       const today = new Date();
-      const todayYear = today.getFullYear();
-      const todayMonth = today.getMonth() + 1;
-      const todayDay = today.getDate();
-      
-      // 日期格子
+      const ty = today.getFullYear(), tm = today.getMonth() + 1, td = today.getDate();
+
       for (let day = 1; day <= daysInMonth; day++) {
         const cell = document.createElement('div');
-        const hasFlights = flightsByDate[day] && flightsByDate[day].length > 0;
-        const isToday = year === todayYear && month === todayMonth && day === todayDay;
-        
-        // 設定 cell 的 class
-        let cellClass = 'cell';
-        if (hasFlights) cellClass += ' has-event';
-        if (isToday) cellClass += ' today';
-        cell.className = cellClass;
+        const dayFlights = flightsByDate[day];
+        const hasFlights = !!(dayFlights && dayFlights.length > 0);
+        const isToday = year === ty && month === tm && day === td;
+
+        cell.className = 'cell' + (hasFlights ? ' has-event' : '') + (isToday ? ' today' : '');
         if (isToday) cell.id = 'today';
-        
+
         const dateDiv = document.createElement('div');
         dateDiv.className = isToday ? 'date today' : 'date';
         dateDiv.textContent = day;
         cell.appendChild(dateDiv);
-        
-        // 添加航班事件
+
         if (hasFlights) {
-          flightsByDate[day].forEach(flight => {
+          dayFlights.forEach(flight => {
             const eventEl = document.createElement('div');
             eventEl.className = 'event';
             eventEl.id = `d-${flight.date}`;
-            
             eventEl.innerHTML = `
-              <div class="event-compact">
-                <div class="time">${flight.deptTime}</div>
-                <div class="route">${flight.departureShort} → ${flight.arrivalShort}</div>
-              </div>
-              <div class="event-full">
-                <div class="airline">${flight.airline} ${flight.airlineEn}</div>
-                <div class="route">${flight.departure} → ${flight.arrival}</div>
-                <div class="meta">${flight.deptTime} → ${flight.arrTime} ・ ${flight.flightNo}</div>
-              </div>
+              <div class="etime">${flight.deptTime}</div>
+              <div class="eroute">${flight.departureShort}→${flight.arrivalShort}</div>
             `;
-            
+            eventEl.addEventListener('click', e => {
+              e.stopPropagation();
+              showFlightModal(flight);
+            });
             cell.appendChild(eventEl);
           });
         }
-        
+
         bodyGrid.appendChild(cell);
       }
-      
-      // 後面的空白格子（讓最後一行填滿）
+
       const totalCells = firstDay + daysInMonth;
-      const remainingCells = 7 - (totalCells % 7);
-      if (remainingCells < 7) {
-        for (let i = 0; i < remainingCells; i++) {
-          const blankCell = document.createElement('div');
-          blankCell.className = 'cell blank';
-          bodyGrid.appendChild(blankCell);
+      const remaining = 7 - (totalCells % 7);
+      if (remaining < 7) {
+        for (let i = 0; i < remaining; i++) {
+          const blank = document.createElement('div');
+          blank.className = 'cell blank';
+          bodyGrid.appendChild(blank);
         }
       }
-      
+
       section.appendChild(bodyGrid);
       return section;
     }
-    
-    // 更新航班清單
+
+    // ── Flight list ───────────────────────────────────────────────
     function updateFlightList(flights) {
-      const tabUpcoming  = document.getElementById('tabUpcoming');
-      const tabDeparted  = document.getElementById('tabDeparted');
-      if (!tabUpcoming || !tabDeparted) return;
-
-      const todayStr = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-
+      const todayStr = new Date().toISOString().slice(0, 10);
       const upcoming = flights.filter(f => f.date >= todayStr);
-      const departed = flights.filter(f => f.date <  todayStr);
+      const departed = flights.filter(f => f.date < todayStr).reverse();
 
-      document.getElementById('upcomingCount').textContent = upcoming.length;
-      document.getElementById('departedCount').textContent = departed.length;
+      const badgeUp = document.getElementById('badgeUpcoming');
+      badgeUp.textContent = upcoming.length;
+      badgeUp.dataset.count = upcoming.length;
 
-      function buildCards(list, container, isDeparted) {
-        container.innerHTML = '';
-        if (list.length === 0) {
-          container.innerHTML = '<div style="padding:20px;color:#6b7280;font-size:14px;text-align:center">沒有航班</div>';
-          return;
-        }
-        list.forEach(flight => {
-          const cardEl = document.createElement('a');
-          cardEl.className = 'card' + (isDeparted ? ' departed' : '');
-          cardEl.href = `#d-${flight.date}`;
-          cardEl.onclick = closeListOnMobile;
-          cardEl.innerHTML = `
-            <div class="date-tag">${flight.date}</div>
-            <div class="airline">${flight.airline} ${flight.airlineEn}</div>
-            <div class="route">${flight.departure} → ${flight.arrival}</div>
-            <div class="meta">${flight.deptTime} → ${flight.arrTime} ・ ${flight.flightNo}</div>
-          `;
-          container.appendChild(cardEl);
-        });
-      }
+      const badgeDep = document.getElementById('badgeDeparted');
+      badgeDep.textContent = departed.length;
+      badgeDep.dataset.count = departed.length;
 
-      buildCards(upcoming, tabUpcoming, false);
-      buildCards(departed, tabDeparted, true);
+      buildCards(upcoming, document.getElementById('listUpcoming'), false);
+      buildCards(departed, document.getElementById('listDeparted'), true);
     }
-    
-    // ── 下拉刷新 (Pull-to-Refresh) ──────────────────────────────
+
+    function buildCards(list, container, isDeparted) {
+      container.innerHTML = '';
+      if (list.length === 0) {
+        container.innerHTML = '<div class="list-empty">沒有航班</div>';
+        return;
+      }
+      list.forEach(flight => {
+        const card = document.createElement('div');
+        card.className = 'lcard' + (isDeparted ? ' departed' : '');
+        card.innerHTML = `
+          <div class="date-tag">${flight.date}</div>
+          <div class="airline">${flight.airline} ${flight.airlineEn}</div>
+          <div class="route">${flight.departure} → ${flight.arrival}</div>
+          <div class="meta">${flight.deptTime} → ${flight.arrTime} ・ ${flight.flightNo}</div>
+        `;
+        card.addEventListener('click', () => {
+          switchPanel('panelCalendar');
+          setTimeout(() => {
+            const target = document.getElementById('d-' + flight.date);
+            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 50);
+        });
+        container.appendChild(card);
+      });
+    }
+
+    function showConnectionError(msg) {
+      const calendarWrap = document.querySelector('#panelCalendar .calendar-wrap');
+      calendarWrap.innerHTML = `
+        <div style="text-align:center;padding:40px;color:#ef4444;">
+          <div style="font-size:18px;margin-bottom:8px;">載入失敗</div>
+          <div style="font-size:14px;color:#6b7280;margin-bottom:16px;">無法從 Google Sheets 載入航班資料</div>
+          ${msg ? `<div style="font-size:13px;color:#ef4444;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;margin-top:8px;white-space:pre-wrap;text-align:left;">${msg}</div>` : ''}
+          <button onclick="loadFlightsFromGAS()" style="margin-top:16px;padding:8px 16px;background:#1d4ed8;color:white;border:none;border-radius:6px;cursor:pointer;">重新載入</button>
+        </div>`;
+    }
+
+    // ── Pull-to-refresh ───────────────────────────────────────────
     (function() {
-      const PTR_THRESHOLD = 70; // 觸發所需的下拉距離 (px)
+      const PTR_THRESHOLD = 70;
       const indicator = document.getElementById('ptrIndicator');
-      let startY = 0;
-      let pulling = false;
-      let triggered = false;
+      let startY = 0, pulling = false, triggered = false;
 
       function setPtrY(dy) {
-        // dy: 0 ~ PTR_THRESHOLD，映射到指示器位置
         const ratio = Math.min(dy / PTR_THRESHOLD, 1);
-        const translateY = -60 + ratio * 70; // -60px → 10px
-        const rotate = ratio * 180;
-        indicator.style.transform = `translateX(-50%) translateY(${translateY}px) rotate(${rotate}deg)`;
+        const ty = -60 + ratio * 70;
+        const rot = ratio * 180;
+        indicator.style.transform = `translateX(-50%) translateY(${ty}px) rotate(${rot}deg)`;
         indicator.style.opacity = ratio;
-        indicator.classList.toggle('visible', ratio > 0.1);
       }
 
-      document.addEventListener('touchstart', (e) => {
-        // 只在頁面頂端且沒有正在載入時啟動
-        if (window.scrollY === 0 && !document.getElementById('loadingModal').classList.contains('show')) {
+      document.addEventListener('touchstart', e => {
+        if (window.scrollY === 0 && currentPanel === 'panelCalendar' && !isLoading) {
           startY = e.touches[0].clientY;
           pulling = true;
           triggered = false;
@@ -765,14 +604,13 @@
         }
       }, { passive: true });
 
-      document.addEventListener('touchmove', (e) => {
+      document.addEventListener('touchmove', e => {
         if (!pulling) return;
         const dy = e.touches[0].clientY - startY;
         if (dy > 0) {
           setPtrY(dy);
           if (dy >= PTR_THRESHOLD && !triggered) {
             triggered = true;
-            // 震動回饋（若裝置支援）
             if (navigator.vibrate) navigator.vibrate(30);
           }
         }
@@ -782,12 +620,10 @@
         if (!pulling) return;
         pulling = false;
         if (triggered) {
-          // 鎖定在觸發位置並旋轉，等載入完成再收回
-          indicator.style.transform = 'translateX(-50%) translateY(10px) rotate(0deg)';
+          indicator.style.transform = 'translateX(-50%) translateY(10px)';
           indicator.classList.add('spinning');
           loadFlightsFromGAS();
         } else {
-          // 收回指示器
           indicator.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
           setPtrY(0);
           setTimeout(() => { indicator.style.transition = ''; }, 300);
@@ -801,19 +637,15 @@
         setTimeout(() => { indicator.style.transition = ''; }, 300);
       };
     })();
-    // ─────────────────────────────────────────────────────────────
 
-    document.addEventListener('DOMContentLoaded', () => {
-      loadFlightsFromGAS();
-    });
+    // ── Init ──────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', loadFlightsFromGAS);
 
-    // Register Service Worker
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js').catch(err => {
         console.warn('Service Worker registration failed:', err);
       });
     }
-    
   </script>
 </body>
 </html>
