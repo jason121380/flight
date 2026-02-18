@@ -1,4 +1,4 @@
-const CACHE_NAME = 'flight-calendar-v3';
+const CACHE_NAME = 'flight-calendar-v4';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -19,7 +19,6 @@ self.addEventListener('activate', (event) => {
       Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
     )
   );
-  self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
