@@ -423,11 +423,6 @@
           console.log('CSV 內容預覽:', csvText.substring(0, 300));
           updateProgress(60, '解析 CSV 資料...');
 
-          // 偵測是否回傳 HTML（Google 登入重定向）
-          if (csvText.trim().startsWith('<')) {
-            throw new Error('GOOGLE_HTML');
-          }
-
           // 解析 CSV 資料
           const flights = parseCSVToFlights(csvText);
           console.log(`解析完成，找到 ${flights.length} 筆航班資料:`, flights);
@@ -465,11 +460,8 @@
           hideLoading();
 
           const isNetworkErr = error.message.includes('Failed to fetch') || error.message.includes('NetworkError');
-          const isHtmlResp = error.message === 'GOOGLE_HTML';
-          if (isHtmlResp) {
-            showConnectionError(`Google Sheets 回傳了登入頁面而非資料。\n\n請重新發布試算表：\n1. 開啟 Google Sheets\n2. 檔案 → 共用 → 發布到網路\n3. 選擇正確工作表 → 發布\n4. 複製新連結後更新程式碼`, true);
-          } else if (isNetworkErr) {
-            showConnectionError(`網路連線失敗（已自動重試 3 次）。\n\n請確認裝置已連上網路，再按「重新載入」。`);
+          if (isNetworkErr) {
+            showConnectionError(`網路連線失敗（已自動重試 3 次）。\n\n請確認：\n1. 裝置已連上網路\n2. Google Sheets 已發布到網路（檔案 → 共用 → 發布到網路）\n3. 再按一次「重新載入」`);
           } else {
             showConnectionError(`載入錯誤: ${error.message}`);
           }
@@ -576,18 +568,15 @@
     }
     
     // 顯示連線錯誤
-    function showConnectionError(errorMessage = '', showOpenUrl = false) {
+    function showConnectionError(errorMessage = '') {
       const calendarWrap = document.querySelector('.calendar-wrap');
 
       calendarWrap.innerHTML = `
         <div style="text-align:center;padding:40px;color:#ef4444;">
           <div style="font-size:18px;margin-bottom:8px;">載入失敗</div>
           <div style="font-size:14px;color:#6b7280;margin-bottom:16px;">無法從 Google Sheets 載入航班資料</div>
-          ${errorMessage ? `<div style="font-size:13px;color:#374151;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;margin-top:8px;white-space:pre-wrap;text-align:left;">${errorMessage}</div>` : ''}
-          <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:16px;">
-            <button onclick="loadFlightsFromGAS()" style="padding:8px 16px;background:#1d4ed8;color:white;border:none;border-radius:6px;cursor:pointer;">重新載入</button>
-            ${showOpenUrl ? `<button onclick="window.open(SHEETS_CSV_URL,'_blank')" style="padding:8px 16px;background:#fff;color:#1d4ed8;border:1px solid #1d4ed8;border-radius:6px;cursor:pointer;">開啟 CSV 連結確認</button>` : ''}
-          </div>
+          ${errorMessage ? `<div style="font-size:13px;color:#ef4444;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;margin-top:8px;white-space:pre-wrap;text-align:left;">${errorMessage}</div>` : ''}
+          <button onclick="loadFlightsFromGAS()" style="margin-top:16px;padding:8px 16px;background:#1d4ed8;color:white;border:none;border-radius:6px;cursor:pointer;">重新載入</button>
         </div>
       `;
     }
