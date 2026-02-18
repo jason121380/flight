@@ -390,19 +390,29 @@
       return timeStr;
     }
     
+    // 帶重試機制的 fetch
+    function fetchWithRetry(url, retries = 3, delay = 1500) {
+      return fetch(url).catch(err => {
+        if (retries <= 0) throw err;
+        console.warn(`fetch 失敗，${delay}ms 後重試，剩餘次數: ${retries}`, err.message);
+        return new Promise(resolve => setTimeout(resolve, delay))
+          .then(() => fetchWithRetry(url, retries - 1, delay * 1.5));
+      });
+    }
+
     // 從 Google Sheets 載入航班資料 (使用發布到網路的 CSV)
     function loadFlightsFromGAS() {
       // 顯示載入動畫並清空現有資料
       showLoading();
       console.log('正在從發布的 Google Sheets 載入航班資料...');
-      
+
       updateProgress(10, '連接 Google Sheets...');
-      
-      fetch(SHEETS_CSV_URL)
+
+      fetchWithRetry(SHEETS_CSV_URL)
         .then(response => {
           console.log('CSV 回應狀態:', response.status);
           updateProgress(30, '下載資料...');
-          
+
           if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
           }
@@ -412,26 +422,26 @@
           console.log('CSV 資料載入成功，長度:', csvText.length);
           console.log('CSV 內容預覽:', csvText.substring(0, 300));
           updateProgress(60, '解析 CSV 資料...');
-          
+
           // 解析 CSV 資料
           const flights = parseCSVToFlights(csvText);
           console.log(`解析完成，找到 ${flights.length} 筆航班資料:`, flights);
-          
+
           if (flights.length === 0) {
             throw new Error('解析後沒有找到任何航班資料');
           }
-          
+
           updateProgress(85, '格式化時間資料...');
-          
+
           // 格式化時間
           const formattedFlights = flights.map(flight => ({
             ...flight,
             deptTime: formatTimeOnFrontend(flight.deptTime),
             arrTime: formatTimeOnFrontend(flight.arrTime)
           }));
-          
+
           updateProgress(95, '生成日曆...');
-          
+
           setTimeout(() => {
             updateCalendarWithFlights(formattedFlights);
             updateFlightList(formattedFlights);
@@ -442,16 +452,16 @@
               todayCell.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
           }, 100);
-          
+
         })
         .catch(error => {
           console.error('Google Sheets CSV 載入失敗:', error);
           console.log('使用的 CSV URL:', SHEETS_CSV_URL);
           hideLoading();
-          
-          // 提供更詳細的錯誤訊息和解決方案
-          if (error.message.includes('Failed to fetch')) {
-            showConnectionError(`網路連線失敗，無法存取 Google Sheets CSV。\n\n可能的解決方案：\n1. 檢查網路連線\n2. 確認 Google Sheets 已發布到網路\n3. 嘗試重新整理頁面`);
+
+          const isNetworkErr = error.message.includes('Failed to fetch') || error.message.includes('NetworkError');
+          if (isNetworkErr) {
+            showConnectionError(`網路連線失敗（已自動重試 3 次）。\n\n請確認：\n1. 裝置已連上網路\n2. Google Sheets 已發布到網路（檔案 → 共用 → 發布到網路）\n3. 再按一次「重新載入」`);
           } else {
             showConnectionError(`載入錯誤: ${error.message}`);
           }
