@@ -26,6 +26,8 @@
   .refresh-btn{background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;opacity:0.7;transition:opacity 0.2s}
   .refresh-btn:hover{opacity:1}
   .refresh-btn:disabled{opacity:0.3;cursor:default}
+  .refresh-btn.spinning svg{animation:refresh-spin 0.8s linear infinite}
+  @keyframes refresh-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 
   /* ── Panels ─────────────────────────────────────────────── */
   .panel{display:none;padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px))}
@@ -227,12 +229,12 @@
 
     function startRefreshSpin() {
       const btn = document.getElementById('refreshBtn');
-      if (btn) btn.disabled = true;
+      if (btn) { btn.disabled = true; btn.classList.add('spinning'); }
     }
 
     function stopRefreshSpin() {
       const btn = document.getElementById('refreshBtn');
-      if (btn) btn.disabled = false;
+      if (btn) { btn.disabled = false; btn.classList.remove('spinning'); }
       if (window._ptrHide) window._ptrHide();
     }
 
