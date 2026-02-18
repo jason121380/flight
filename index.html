@@ -388,8 +388,11 @@
     function loadFlightsFromGAS() {
       showLoading();
       updateProgress(10, '連接 Google Sheets...');
-      
-      fetch(SHEETS_CSV_URL)
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 秒超時
+
+      fetch(SHEETS_CSV_URL, { signal: controller.signal })
         .then(response => {
           updateProgress(30, '下載資料...');
           
@@ -417,6 +420,7 @@
           
           updateProgress(95, '生成日曆...');
           
+          clearTimeout(timeoutId);
           setTimeout(() => {
             updateCalendarWithFlights(formattedFlights);
             updateFlightList(formattedFlights);
@@ -430,12 +434,14 @@
           
         })
         .catch(error => {
+          clearTimeout(timeoutId);
           console.error('Google Sheets CSV 載入失敗:', error);
           hideLoading();
-          
-          // 提供更詳細的錯誤訊息和解決方案
-          if (error.message.includes('Failed to fetch')) {
-            showConnectionError(`網路連線失敗，無法存取 Google Sheets CSV。\n\n可能的解決方案：\n1. 檢查網路連線\n2. 確認 Google Sheets 已發布到網路\n3. 嘗試重新整理頁面`);
+
+          if (error.name === 'AbortError') {
+            showConnectionError('連線逾時（20 秒），請檢查網路後重試。');
+          } else if (error.message.includes('Failed to fetch')) {
+            showConnectionError('網路連線失敗，無法存取 Google Sheets。\n請確認網路連線後重試。');
           } else {
             showConnectionError(`載入錯誤: ${error.message}`);
           }
@@ -811,26 +817,6 @@
       });
     }
     
-    window.addEventListener('load', () => {
-      setTimeout(() => {
-        const loadingModal = document.getElementById('loadingModal');
-        if (loadingModal && loadingModal.classList.contains('show')) {
-          hideLoading();
-          
-          // 顯示提示訊息
-          const calendarWrap = document.querySelector('.calendar-wrap');
-          if (calendarWrap && calendarWrap.innerHTML.trim() === '') {
-            calendarWrap.innerHTML = `
-              <div style="text-align:center;padding:40px;color:#6b7280;">
-                <div style="font-size:16px;margin-bottom:8px;">載入完成</div>
-                <div style="font-size:14px;">如果沒有看到航班資料，請點擊重新載入</div>
-                <button onclick="loadFlightsFromGAS()" style="margin-top:16px;padding:8px 16px;background:#1d4ed8;color:white;border:none;border-radius:6px;cursor:pointer;">重新載入</button>
-              </div>
-            `;
-          }
-        }
-      }, 3000);
-    });
   </script>
 </body>
 </html>
