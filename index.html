@@ -97,13 +97,17 @@
     aside.flight-list{position:fixed;top:0;right:-100%;width:80%;max-width:340px;height:100vh;border-left:1px solid var(--line);box-shadow:-4px 0 16px rgba(0,0,0,.2);transition:right .28s ease;background:#fff;z-index:40}
     aside.flight-list.open{right:0}
     .month-header{top:44px}
-    
-    /* 手機版事件簡化顯示 */
-    .event{cursor:pointer;transition:all 0.2s ease}
-    .event-compact{display:block;font-size:11px}
+
+    /* 手機版事件：圓圈點指示器 */
+    .event{cursor:pointer;background:none;border:none;padding:0;border-radius:50%;width:10px;height:10px;min-width:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform 0.15s ease}
+    .event:active{transform:scale(1.4)}
+    .event-compact{display:none}
     .event-full{display:none}
-    .event-compact .time{font-weight:600;color:#4338ca}
-    .event-compact .route{margin-top:1px;color:#374151}
+    .event-dot{display:block;width:8px;height:8px;background:#4338ca;border-radius:50%;box-shadow:0 1px 4px rgba(67,56,202,0.5)}
+
+    /* 有航班的格子：日期占整行，圓點橫排其下 */
+    .cell.has-event{flex-direction:row;flex-wrap:wrap;align-items:flex-start;gap:3px}
+    .cell.has-event .date{width:100%;flex-shrink:0}
   }
 </style>
 </head>
@@ -705,6 +709,7 @@
             eventEl.id = `d-${flight.date}`;
             
             eventEl.innerHTML = `
+              <div class="event-dot"></div>
               <div class="event-compact">
                 <div class="time">${flight.deptTime}</div>
                 <div class="route">${flight.departureShort} → ${flight.arrivalShort}</div>
