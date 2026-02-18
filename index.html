@@ -556,129 +556,16 @@
       return simplifications[location] || location;
     }
     
-    // JSONP 載入方式（備用）
-    function loadWithJSONP() {
-      console.log('開始 JSONP 請求...');
-      updateProgress(10, '建立連線...');
-      
-      // 建立 JSONP 回調函數
-      const callbackName = 'flightDataCallback_' + Date.now();
-      let timeoutId;
-      
-      window[callbackName] = function(result) {
-        console.log('收到 JSONP 回應:', result);
-        
-        // 清除超時定時器
-        if (timeoutId) {
-          clearTimeout(timeoutId);
-        }
-        
-        try {
-          if (result && result.success) {
-            console.log('成功載入航班資料:', result.data);
-            
-            // 更新進度到85%
-            updateProgress(85, '格式化時間資料...');
-            
-            // 檢查資料結構
-            if (!result.data || !result.data.flights) {
-              throw new Error('資料格式不正確：缺少 flights 陣列');
-            }
-            
-            // 在前端修正時間格式
-            const flights = result.data.flights.map(flight => ({
-              ...flight,
-              deptTime: formatTimeOnFrontend(flight.deptTime),
-              arrTime: formatTimeOnFrontend(flight.arrTime)
-            }));
-            
-            console.log(`前端格式化後的航班資料: ${flights.length} 筆`, flights);
-            
-            // 更新進度到95%並立即處理
-            updateProgress(95, '生成日曆...');
-            
-            // 減少延遲，更快完成
-            setTimeout(() => {
-              updateCalendarWithFlights(flights);
-              updateFlightList(flights);
-              hideLoading();
-            }, 100);
-            
-          } else {
-            console.error('載入航班資料失敗:', result);
-            const errorMsg = (result && result.data && result.data.error) ? result.data.error : '未知錯誤';
-            showConnectionError(`伺服器回應錯誤: ${errorMsg}`);
-          }
-        } catch (error) {
-          console.error('處理資料錯誤:', error);
-          showConnectionError(`資料處理錯誤: ${error.message}`);
-        } finally {
-          // 清理回調函數和 script 標籤
-          delete window[callbackName];
-          if (script && script.parentNode) {
-            document.head.removeChild(script);
-          }
-        }
-      };
-      
-      // 建立 script 標籤
-      const script = document.createElement('script');
-      script.src = `${APPS_SCRIPT_URL}?action=getFlights&callback=${callbackName}`;
-      
-      console.log('JSONP 請求 URL:', script.src);
-      updateProgress(20, '發送請求...');
-      
-      script.onerror = function() {
-        console.error('JSONP script 載入失敗');
-        if (timeoutId) clearTimeout(timeoutId);
-        
-        delete window[callbackName];
-        if (script && script.parentNode) {
-          document.head.removeChild(script);
-        }
-        
-        hideLoading();
-        showConnectionError('JSONP script 載入失敗 - 請檢查 Apps Script URL 是否正確');
-      };
-      
-      // 設定超時（縮短為 8 秒，更快反應）
-      timeoutId = setTimeout(() => {
-        if (window[callbackName]) {
-          console.error('JSONP 請求超時');
-          console.log('請求 URL:', script.src);
-          
-          delete window[callbackName];
-          if (script && script.parentNode) {
-            document.head.removeChild(script);
-          }
-          
-          hideLoading();
-          showConnectionError('JSONP 請求超時（8秒） - 請檢查網路連線或 Apps Script 設定');
-        }
-      }, 8000); // 8秒超時
-      
-      // 載入進度模擬
-      updateProgress(30, '等待伺服器回應...');
-      setTimeout(() => {
-        if (window[callbackName]) {
-          updateProgress(50, '處理中...');
-        }
-      }, 1000);
-      
-      document.head.appendChild(script);
-    }
-    
-    // 移除 Fetch 備用方案，專注於 JSONP
-    // JSONP 是避免 CORS 問題的最佳解決方案
-    
     // 顯示連線錯誤
     function showConnectionError(errorMessage = '') {
       const calendarWrap = document.querySelector('.calendar-wrap');
-      
+
       calendarWrap.innerHTML = `
         <div style="text-align:center;padding:40px;color:#ef4444;">
           <div style="font-size:18px;margin-bottom:8px;">載入失敗</div>
           <div style="font-size:14px;color:#6b7280;margin-bottom:16px;">無法從 Google Sheets 載入航班資料</div>
+          ${errorMessage ? `<div style="font-size:13px;color:#ef4444;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;margin-top:8px;white-space:pre-wrap;text-align:left;">${errorMessage}</div>` : ''}
+          <button onclick="loadFlightsFromGAS()" style="margin-top:16px;padding:8px 16px;background:#1d4ed8;color:white;border:none;border-radius:6px;cursor:pointer;">重新載入</button>
         </div>
       `;
     }
