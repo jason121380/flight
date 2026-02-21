@@ -93,11 +93,9 @@
   /* ── Loading ────────────────────────────────────────────── */
   .inline-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 120px);padding:40px}
   .loading-text{font-size:13px;color:#6b7280;font-weight:500;margin-top:14px}
-  .circle-progress{position:relative;width:80px;height:80px;margin:0 auto}
-  .circle-progress svg{transform:rotate(-90deg)}
-  .cp-track{fill:none;stroke:#e5e7eb;stroke-width:6}
-  .cp-ring{fill:none;stroke:#1d4ed8;stroke-width:6;stroke-linecap:round;stroke-dasharray:213.6;stroke-dashoffset:213.6;transition:stroke-dashoffset 0.25s ease}
-  .cp-pct{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:17px;font-weight:700;color:#1d4ed8;line-height:1}
+  /* ── Stale badge (background refresh indicator) ─────────── */
+  .stale-badge{position:fixed;bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) + 10px);left:50%;transform:translateX(-50%);background:rgba(29,78,216,0.92);color:#fff;font-size:12px;padding:6px 14px;border-radius:20px;z-index:40;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.2);opacity:0;transition:opacity 0.3s ease;pointer-events:none}
+  .stale-badge.show{opacity:1}
 
   /* ── Pull-to-refresh ────────────────────────────────────── */
   .ptr-indicator{position:fixed;top:var(--header-h);left:50%;transform:translateX(-50%) translateY(-60px);width:40px;height:40px;background:#fff;border:1px solid var(--line);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 2px 8px rgba(0,0,0,0.15);z-index:25;pointer-events:none;opacity:0}
@@ -226,9 +224,30 @@
     modal.addEventListener('click', e => { if (e.target === modal) hideModal(); });
     document.addEventListener('keydown', e => { if (e.key === 'Escape') hideModal(); });
 
-    // ── Loading ───────────────────────────────────────────────────
-    let progressInterval;
+    // ── LocalStorage Cache ────────────────────────────────────────
+    const CACHE_KEY = 'flights_cache_v1';
+    const CACHE_TS_KEY = 'flights_cache_ts_v1';
 
+    function saveToCache(flights) {
+      try {
+        localStorage.setItem(CACHE_KEY, JSON.stringify(flights));
+        localStorage.setItem(CACHE_TS_KEY, Date.now().toString());
+      } catch(e) { console.warn('快取寫入失敗:', e); }
+    }
+
+    function loadFromCache() {
+      try {
+        const raw = localStorage.getItem(CACHE_KEY);
+        return raw ? JSON.parse(raw) : null;
+      } catch(e) { return null; }
+    }
+
+    function getCacheAge() {
+      const ts = localStorage.getItem(CACHE_TS_KEY);
+      return ts ? Math.floor((Date.now() - parseInt(ts)) / 60000) : null; // 分鐘
+    }
+
+    // ── Loading ───────────────────────────────────────────────────
     function startRefreshSpin() {
       const btn = document.getElementById('refreshBtn');
       if (btn) { btn.disabled = true; btn.classList.add('spinning'); }
@@ -245,93 +264,112 @@
       const calendarWrap = document.querySelector('#panelCalendar .calendar-wrap');
       calendarWrap.innerHTML = `
         <div class="inline-loading">
-          <div class="circle-progress">
-            <svg viewBox="0 0 80 80" width="80" height="80">
-              <circle class="cp-track" cx="40" cy="40" r="34"/>
-              <circle class="cp-ring" id="progressRing" cx="40" cy="40" r="34"/>
-            </svg>
-            <div class="cp-pct" id="progressPct">0%</div>
-          </div>
-          <div class="loading-text" id="progressText">正在連接...</div>
+          <div class="list-spinner"></div>
+          <div class="loading-text">正在載入航班資料...</div>
         </div>`;
       ['listUpcoming', 'listDeparted'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.innerHTML = '<div class="inline-loading"><div class="list-spinner"></div></div>';
       });
       startRefreshSpin();
-
-      let progress = 0;
-      progressInterval = setInterval(() => {
-        if (progress < 30) {
-          progress += Math.random() * 8 + 2;
-          updateProgress(progress, '正在連接 Google Sheets...');
-        } else if (progress < 70) {
-          progress += Math.random() * 5 + 1;
-          updateProgress(progress, '讀取航班資料...');
-        } else if (progress < 85) {
-          progress += Math.random() * 2 + 0.5;
-          updateProgress(progress, '處理資料格式...');
-        }
-      }, 50);
-    }
-
-    function updateProgress(percent, message) {
-      const ring = document.getElementById('progressRing');
-      const pct = document.getElementById('progressPct');
-      const text = document.getElementById('progressText');
-      const circumference = 213.6;
-      if (ring) ring.style.strokeDashoffset = circumference * (1 - Math.min(percent, 100) / 100);
-      if (pct) pct.textContent = Math.round(Math.min(percent, 100)) + '%';
-      if (text && message) text.textContent = message;
     }
 
     function hideLoading() {
       isLoading = false;
-      if (progressInterval) { clearInterval(progressInterval); progressInterval = null; }
       stopRefreshSpin();
     }
 
+    // ── Stale badge ───────────────────────────────────────────────
+    function showStaleBadge(msg) {
+      let badge = document.getElementById('staleBadge');
+      if (!badge) {
+        badge = document.createElement('div');
+        badge.id = 'staleBadge';
+        badge.className = 'stale-badge';
+        document.body.appendChild(badge);
+      }
+      badge.textContent = msg;
+      badge.classList.add('show');
+      setTimeout(() => badge.classList.remove('show'), 3000);
+    }
+
     // ── Data loading ──────────────────────────────────────────────
-    function loadFlightsFromGAS() {
-      showLoading();
-      updateProgress(10, '連接 Google Sheets...');
+    function applyFlights(flights, { scrollToToday = true } = {}) {
+      updateCalendarWithFlights(flights);
+      updateFlightList(flights);
+      if (scrollToToday) {
+        const todayCell = document.getElementById('today');
+        if (todayCell) todayCell.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 20000);
-
-      fetch(SHEETS_CSV_URL, { signal: controller.signal })
+    function fetchAndProcess(signal) {
+      return fetch(SHEETS_CSV_URL, { signal })
         .then(response => {
-          updateProgress(30, '下載資料...');
           if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
           return response.text();
         })
         .then(csvText => {
-          updateProgress(60, '解析 CSV 資料...');
           const flights = parseCSVToFlights(csvText);
           if (flights.length === 0) throw new Error('解析後沒有找到任何航班資料');
-          updateProgress(85, '格式化時間資料...');
-
-          const formattedFlights = flights.map(f => ({
+          return flights.map(f => ({
             ...f,
             deptTime: formatTimeOnFrontend(f.deptTime),
             arrTime: formatTimeOnFrontend(f.arrTime)
           }));
+        });
+    }
 
-          updateProgress(95, '生成日曆...');
+    function loadFlightsFromGAS({ silent = false } = {}) {
+      // ── Step 1: Show cached data immediately ──────────────────
+      const cached = loadFromCache();
+      if (cached && !silent) {
+        applyFlights(cached);
+        // Show faint spinner in header only (not full-screen loading)
+        startRefreshSpin();
+        isLoading = true;
+      } else if (!silent) {
+        showLoading();
+      }
+
+      // ── Step 2: Fetch fresh data in background ────────────────
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 20000);
+
+      fetchAndProcess(controller.signal)
+        .then(flights => {
           clearTimeout(timeoutId);
+          saveToCache(flights);
 
-          setTimeout(() => {
-            updateCalendarWithFlights(formattedFlights);
-            updateFlightList(formattedFlights);
+          if (silent) {
+            // Silent background update: just refresh the UI quietly
+            applyFlights(flights, { scrollToToday: false });
+            showStaleBadge('✓ 航班資料已更新');
+          } else if (cached) {
+            // Had cache: update UI quietly without scroll jump
+            applyFlights(flights, { scrollToToday: false });
             hideLoading();
-            const todayCell = document.getElementById('today');
-            if (todayCell) todayCell.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }, 100);
+            const age = getCacheAge();
+            if (age !== null && age > 0) showStaleBadge(`✓ 已更新（上次快取：${age} 分鐘前）`);
+          } else {
+            // First load ever: apply with scroll
+            applyFlights(flights);
+            hideLoading();
+          }
         })
         .catch(error => {
           clearTimeout(timeoutId);
           console.error('載入失敗:', error);
+
+          if (silent) return; // Silent mode: don't show error if we have cache
+
           hideLoading();
+
+          if (cached) {
+            // Still have old cache, show badge only
+            showStaleBadge('⚠ 無法更新，顯示快取資料');
+            return;
+          }
 
           const isNetworkError =
             error.message.includes('Failed to fetch') ||
@@ -641,7 +679,16 @@
     document.addEventListener('DOMContentLoaded', loadFlightsFromGAS);
 
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js').catch(err => {
+      navigator.serviceWorker.register('./sw.js').then(reg => {
+        console.log('Service Worker registered.');
+        // Listen for background CSV update messages from SW
+        navigator.serviceWorker.addEventListener('message', (event) => {
+          if (event.data && event.data.type === 'CSV_UPDATED' && !isLoading) {
+            // Silently refresh data when SW has fetched a new CSV
+            loadFlightsFromGAS({ silent: true });
+          }
+        });
+      }).catch(err => {
         console.warn('Service Worker registration failed:', err);
       });
     }
