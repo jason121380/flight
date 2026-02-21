@@ -1,122 +1,547 @@
 <!doctype html>
 <html lang="zh-Hant">
+
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>飛行行事曆</title>
-<link rel="manifest" href="manifest.json" />
-<meta name="theme-color" content="#1d4ed8" />
-<meta name="mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="default" />
-<meta name="apple-mobile-web-app-title" content="My Flights" />
-<link rel="apple-touch-icon" href="icon.svg" />
-<style>
-  :root{
-    --bg:#ffffff; --text:#111827; --muted:#6b7280; --line:#e5e7eb;
-    --event:#eef2ff; --brand:#1d4ed8; --card:#f9fafb;
-    --header-h:44px; --nav-h:56px;
-  }
-  html,body{background:var(--bg);color:var(--text);margin:0}
-  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang TC","Noto Sans TC",Roboto,"Helvetica Neue",Arial,"Microsoft JhengHei",sans-serif}
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>飛行行事曆</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#1d4ed8" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="My Flights" />
+  <link rel="apple-touch-icon" href="icon.svg" />
+  <style>
+    :root {
+      --bg: #ffffff;
+      --text: #111827;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --event: #eef2ff;
+      --brand: #1d4ed8;
+      --card: #f9fafb;
+      --header-h: 44px;
+      --nav-h: 56px;
+    }
 
-  /* ── Header ─────────────────────────────────────────────── */
-  header{position:sticky;top:0;z-index:30;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 14px;height:var(--header-h);box-sizing:border-box}
-  header h1{margin:0;font-size:18px}
-  .refresh-btn{background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;opacity:0.7;transition:opacity 0.2s}
-  .refresh-btn:hover{opacity:1}
-  .refresh-btn:disabled{opacity:0.3;cursor:default}
-  .refresh-btn.spinning svg{animation:refresh-spin 0.8s linear infinite}
-  .refresh-btn:disabled{opacity:0.7;cursor:default}
-  @keyframes refresh-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-  .list-spinner{width:36px;height:36px;border:4px solid #e5e7eb;border-top-color:#1d4ed8;border-radius:50%;animation:refresh-spin 0.7s linear infinite;margin:0 auto}
+    html,
+    body {
+      background: var(--bg);
+      color: var(--text);
+      margin: 0
+    }
 
-  /* ── Panels ─────────────────────────────────────────────── */
-  .panel{display:none;padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px))}
-  .panel.active{display:block}
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Noto Sans TC", Roboto, "Helvetica Neue", Arial, "Microsoft JhengHei", sans-serif
+    }
 
-  /* ── Calendar ───────────────────────────────────────────── */
-  .calendar-wrap{padding:0}
-  .month{border-top:1px solid var(--line)}
-  .month:first-of-type{border-top:none}
-  .month-header{position:sticky;top:var(--header-h);background:rgba(255,255,255,.95);backdrop-filter:saturate(180%) blur(8px);border-bottom:1px solid var(--line);padding:8px 10px;z-index:10}
-  .month-header h2{margin:0;font-size:16px}
-  .grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
-  .grid.header>div{padding:6px;text-align:center;font-size:11px;color:#6b7280;border-bottom:1px solid var(--line);border-right:1px solid var(--line);background:#fafafa}
-  .grid.header>div:nth-child(7n){border-right:none}
-  .cell{min-height:80px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:5px;display:flex;flex-direction:column;gap:4px;background:#fff}
-  .cell:nth-child(7n){border-right:none}
-  .cell.blank{background:#fff}
-  .date{font-size:12px;color:#9ca3af}
-  .date.today{background:#1d4ed8;color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:11px}
-  .cell.today{background:linear-gradient(135deg,#f0f7ff 0%,#e0f0ff 100%)}
-  .event{background:var(--event);border:1px solid #c7d2fe;border-radius:7px;padding:4px 5px;line-height:1.3;word-wrap:break-word;overflow-wrap:break-word;min-width:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
-  .event:active{background:#c7d2fe}
-  .event .etime{font-weight:700;font-size:11px;color:#4338ca}
-  .event .eroute{font-size:11px;color:#374151;margin-top:1px}
-  .event-full{display:none}
-  .has-event{background:linear-gradient(180deg,#ffffff 0%,#ffffff 65%,#f3f6ff 100%)}
-  .cell.today.has-event{background:linear-gradient(135deg,#f0f7ff 0%,#e0f0ff 100%)}
+    /* ── Header ─────────────────────────────────────────────── */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      height: var(--header-h);
+      box-sizing: border-box
+    }
 
-  /* ── List panels ────────────────────────────────────────── */
-  .list-wrap{padding:12px}
-  .lcard{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:12px 14px;margin-bottom:10px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background 0.15s}
-  .lcard:active{background:#eef2ff;border-color:#c7d2fe}
-  .lcard.departed{opacity:0.5}
-  .lcard .date-tag{font-size:12px;color:#6b7280;margin-bottom:3px}
-  .lcard .airline{font-weight:600;color:#1d4ed8;font-size:14px}
-  .lcard .route{font-size:13px;margin-top:3px}
-  .lcard .meta{font-size:12px;color:#374151;margin-top:3px}
-  .list-empty{padding:48px 20px;text-align:center;color:#6b7280;font-size:14px}
+    header h1 {
+      margin: 0;
+      font-size: 18px
+    }
 
-  /* ── Bottom nav ─────────────────────────────────────────── */
-  .bottom-nav{position:fixed;bottom:0;left:0;right:0;height:calc(var(--nav-h) + env(safe-area-inset-bottom,0px));background:#fff;border-top:1px solid var(--line);display:flex;z-index:30}
-  .bn-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:none;border:none;cursor:pointer;font-size:10px;color:#6b7280;gap:3px;position:relative;padding:0 0 env(safe-area-inset-bottom,0px);-webkit-tap-highlight-color:transparent}
-  .bn-item.active{color:var(--brand)}
-  .bn-item svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-  .bn-badge{position:absolute;top:5px;right:calc(50% - 22px);min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:#ef4444;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;box-sizing:border-box}
-  .bn-badge[data-count="0"]{display:none}
+    .refresh-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.7;
+      transition: opacity 0.2s
+    }
 
-  /* ── Modal ──────────────────────────────────────────────── */
-  .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:50;display:none;align-items:center;justify-content:center;padding:20px;box-sizing:border-box}
-  .modal-overlay.show{display:flex}
-  .modal-content{background:#fff;border-radius:16px;padding:20px;width:100%;max-width:320px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1),0 10px 10px -5px rgba(0,0,0,0.04);transform:scale(0.9);transition:transform 0.2s ease}
-  .modal-overlay.show .modal-content{transform:scale(1)}
-  .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--line)}
-  .modal-title{font-size:16px;font-weight:600;color:var(--text)}
-  .modal-close{background:none;border:none;font-size:24px;color:#9ca3af;cursor:pointer;padding:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center}
-  .modal-close:hover{color:var(--text)}
-  .modal-body .m-airline{font-weight:600;color:#1d4ed8;font-size:15px;margin-bottom:8px}
-  .modal-body .m-route{font-size:14px;margin-bottom:6px;color:var(--text)}
-  .modal-body .m-meta{font-size:13px;color:#6b7280;margin-bottom:4px}
+    .refresh-btn:hover {
+      opacity: 1
+    }
 
-  /* ── Loading ────────────────────────────────────────────── */
-  .inline-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 120px);padding:40px}
-  .loading-text{font-size:13px;color:#6b7280;font-weight:500;margin-top:14px}
-  /* ── Stale badge (background refresh indicator) ─────────── */
-  .stale-badge{position:fixed;bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) + 10px);left:50%;transform:translateX(-50%);background:rgba(29,78,216,0.92);color:#fff;font-size:12px;padding:6px 14px;border-radius:20px;z-index:40;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.2);opacity:0;transition:opacity 0.3s ease;pointer-events:none}
-  .stale-badge.show{opacity:1}
+    .refresh-btn:disabled {
+      opacity: 0.3;
+      cursor: default
+    }
 
-  /* ── Pull-to-refresh ────────────────────────────────────── */
-  .ptr-indicator{position:fixed;top:var(--header-h);left:50%;transform:translateX(-50%) translateY(-60px);width:40px;height:40px;background:#fff;border:1px solid var(--line);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 2px 8px rgba(0,0,0,0.15);z-index:25;pointer-events:none;opacity:0}
-  .ptr-indicator.spinning{animation:ptr-spin 0.8s linear infinite}
-  @keyframes ptr-spin{
-    from{transform:translateX(-50%) translateY(10px) rotate(0deg)}
-    to{transform:translateX(-50%) translateY(10px) rotate(360deg)}
-  }
-</style>
+    .refresh-btn.spinning svg {
+      animation: refresh-spin 0.8s linear infinite
+    }
+
+    .refresh-btn:disabled {
+      opacity: 0.7;
+      cursor: default
+    }
+
+    @keyframes refresh-spin {
+      from {
+        transform: rotate(0deg)
+      }
+
+      to {
+        transform: rotate(360deg)
+      }
+    }
+
+    .list-spinner {
+      width: 36px;
+      height: 36px;
+      border: 4px solid #e5e7eb;
+      border-top-color: #1d4ed8;
+      border-radius: 50%;
+      animation: refresh-spin 0.7s linear infinite;
+      margin: 0 auto
+    }
+
+    /* ── Panels ─────────────────────────────────────────────── */
+    .panel {
+      display: none;
+      padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px))
+    }
+
+    .panel.active {
+      display: block
+    }
+
+    /* ── Calendar ───────────────────────────────────────────── */
+    .calendar-wrap {
+      padding: 0
+    }
+
+    .month {
+      border-top: 1px solid var(--line)
+    }
+
+    .month:first-of-type {
+      border-top: none
+    }
+
+    .month-header {
+      position: sticky;
+      top: var(--header-h);
+      background: rgba(255, 255, 255, .95);
+      backdrop-filter: saturate(180%) blur(8px);
+      border-bottom: 1px solid var(--line);
+      padding: 8px 10px;
+      z-index: 10
+    }
+
+    .month-header h2 {
+      margin: 0;
+      font-size: 16px
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr))
+    }
+
+    .grid.header>div {
+      padding: 6px;
+      text-align: center;
+      font-size: 11px;
+      color: #6b7280;
+      border-bottom: 1px solid var(--line);
+      border-right: 1px solid var(--line);
+      background: #fafafa
+    }
+
+    .grid.header>div:nth-child(7n) {
+      border-right: none
+    }
+
+    .cell {
+      min-height: 80px;
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      padding: 5px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      background: #fff
+    }
+
+    .cell:nth-child(7n) {
+      border-right: none
+    }
+
+    .cell.blank {
+      background: #fff
+    }
+
+    .date {
+      font-size: 12px;
+      color: #9ca3af
+    }
+
+    .date.today {
+      background: #1d4ed8;
+      color: #fff;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 11px
+    }
+
+    .cell.today {
+      background: linear-gradient(135deg, #f0f7ff 0%, #e0f0ff 100%)
+    }
+
+    .event {
+      background: var(--event);
+      border: 1px solid #c7d2fe;
+      border-radius: 7px;
+      padding: 4px 5px;
+      line-height: 1.3;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      min-width: 0;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent
+    }
+
+    .event:active {
+      background: #c7d2fe
+    }
+
+    .event .etime {
+      font-weight: 700;
+      font-size: 11px;
+      color: #4338ca
+    }
+
+    .event .eroute {
+      font-size: 11px;
+      color: #374151;
+      margin-top: 1px
+    }
+
+    .event-full {
+      display: none
+    }
+
+    .has-event {
+      background: linear-gradient(180deg, #ffffff 0%, #ffffff 65%, #f3f6ff 100%)
+    }
+
+    .cell.today.has-event {
+      background: linear-gradient(135deg, #f0f7ff 0%, #e0f0ff 100%)
+    }
+
+    /* ── List panels ────────────────────────────────────────── */
+    .list-wrap {
+      padding: 12px
+    }
+
+    .lcard {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--card);
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.15s
+    }
+
+    .lcard:active {
+      background: #eef2ff;
+      border-color: #c7d2fe
+    }
+
+    .lcard.departed {
+      opacity: 0.5
+    }
+
+    .lcard .date-tag {
+      font-size: 12px;
+      color: #6b7280;
+      margin-bottom: 3px
+    }
+
+    .lcard .airline {
+      font-weight: 600;
+      color: #1d4ed8;
+      font-size: 14px
+    }
+
+    .lcard .route {
+      font-size: 13px;
+      margin-top: 3px
+    }
+
+    .lcard .meta {
+      font-size: 12px;
+      color: #374151;
+      margin-top: 3px
+    }
+
+    .list-empty {
+      padding: 48px 20px;
+      text-align: center;
+      color: #6b7280;
+      font-size: 14px
+    }
+
+    /* ── Bottom nav ─────────────────────────────────────────── */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px));
+      background: #fff;
+      border-top: 1px solid var(--line);
+      display: flex;
+      z-index: 30
+    }
+
+    .bn-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 10px;
+      color: #6b7280;
+      gap: 3px;
+      position: relative;
+      padding: 0 0 env(safe-area-inset-bottom, 0px);
+      -webkit-tap-highlight-color: transparent
+    }
+
+    .bn-item.active {
+      color: var(--brand)
+    }
+
+    .bn-item svg {
+      width: 22px;
+      height: 22px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round
+    }
+
+    .bn-badge {
+      position: absolute;
+      top: 5px;
+      right: calc(50% - 22px);
+      min-width: 16px;
+      height: 16px;
+      padding: 0 4px;
+      border-radius: 999px;
+      background: #ef4444;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box
+    }
+
+    .bn-badge[data-count="0"] {
+      display: none
+    }
+
+    /* ── Modal ──────────────────────────────────────────────── */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 50;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      box-sizing: border-box
+    }
+
+    .modal-overlay.show {
+      display: flex
+    }
+
+    .modal-content {
+      background: #fff;
+      border-radius: 16px;
+      padding: 20px;
+      width: 100%;
+      max-width: 320px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      transform: scale(0.9);
+      transition: transform 0.2s ease
+    }
+
+    .modal-overlay.show .modal-content {
+      transform: scale(1)
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--line)
+    }
+
+    .modal-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text)
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      color: #9ca3af;
+      cursor: pointer;
+      padding: 0;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center
+    }
+
+    .modal-close:hover {
+      color: var(--text)
+    }
+
+    .modal-body .m-airline {
+      font-weight: 600;
+      color: #1d4ed8;
+      font-size: 15px;
+      margin-bottom: 8px
+    }
+
+    .modal-body .m-route {
+      font-size: 14px;
+      margin-bottom: 6px;
+      color: var(--text)
+    }
+
+    .modal-body .m-meta {
+      font-size: 13px;
+      color: #6b7280;
+      margin-bottom: 4px
+    }
+
+    /* ── Loading ────────────────────────────────────────────── */
+    .inline-loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: calc(100vh - 120px);
+      padding: 40px
+    }
+
+    .loading-text {
+      font-size: 13px;
+      color: #6b7280;
+      font-weight: 500;
+      margin-top: 14px
+    }
+
+    /* ── Stale badge (background refresh indicator) ─────────── */
+    .stale-badge {
+      position: fixed;
+      bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px) + 10px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(29, 78, 216, 0.92);
+      color: #fff;
+      font-size: 12px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      z-index: 40;
+      white-space: nowrap;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none
+    }
+
+    .stale-badge.show {
+      opacity: 1
+    }
+
+    /* ── Pull-to-refresh ────────────────────────────────────── */
+    .ptr-indicator {
+      position: fixed;
+      top: var(--header-h);
+      left: 50%;
+      transform: translateX(-50%) translateY(-60px);
+      width: 40px;
+      height: 40px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      z-index: 25;
+      pointer-events: none;
+      opacity: 0
+    }
+
+    .ptr-indicator.spinning {
+      animation: ptr-spin 0.8s linear infinite
+    }
+
+    @keyframes ptr-spin {
+      from {
+        transform: translateX(-50%) translateY(10px) rotate(0deg)
+      }
+
+      to {
+        transform: translateX(-50%) translateY(10px) rotate(360deg)
+      }
+    }
+  </style>
 </head>
+
 <body>
   <div id="ptrIndicator" class="ptr-indicator">🔄</div>
 
   <header>
     <h1>My Flights</h1>
     <button id="refreshBtn" class="refresh-btn" aria-label="重新整理">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M3 12a9 9 0 0 1 15-6.7L21 8"/>
-        <path d="M21 3v5h-5"/>
-        <path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
-        <path d="M3 21v-5h5"/>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
+        <path d="M21 3v5h-5" />
+        <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+        <path d="M3 21v-5h5" />
       </svg>
     </button>
   </header>
@@ -140,24 +565,24 @@
   <nav class="bottom-nav">
     <button class="bn-item active" data-panel="panelCalendar">
       <svg viewBox="0 0 24 24">
-        <rect x="3" y="4" width="18" height="18" rx="2"/>
-        <line x1="16" y1="2" x2="16" y2="6"/>
-        <line x1="8" y1="2" x2="8" y2="6"/>
-        <line x1="3" y1="10" x2="21" y2="10"/>
+        <rect x="3" y="4" width="18" height="18" rx="2" />
+        <line x1="16" y1="2" x2="16" y2="6" />
+        <line x1="8" y1="2" x2="8" y2="6" />
+        <line x1="3" y1="10" x2="21" y2="10" />
       </svg>
       行事曆
     </button>
     <button class="bn-item" data-panel="panelUpcoming">
       <span class="bn-badge" id="badgeUpcoming" data-count="0">0</span>
       <svg viewBox="0 0 24 24">
-        <line x1="22" y1="2" x2="11" y2="13"/>
-        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        <line x1="22" y1="2" x2="11" y2="13" />
+        <polygon points="22 2 15 22 11 13 2 9 22 2" />
       </svg>
       待出發
     </button>
     <button class="bn-item" data-panel="panelDeparted">
       <svg viewBox="0 0 24 24">
-        <polyline points="20 6 9 17 4 12"/>
+        <polyline points="20 6 9 17 4 12" />
       </svg>
       已出發
     </button>
@@ -232,14 +657,14 @@
       try {
         localStorage.setItem(CACHE_KEY, JSON.stringify(flights));
         localStorage.setItem(CACHE_TS_KEY, Date.now().toString());
-      } catch(e) { console.warn('快取寫入失敗:', e); }
+      } catch (e) { console.warn('快取寫入失敗:', e); }
     }
 
     function loadFromCache() {
       try {
         const raw = localStorage.getItem(CACHE_KEY);
         return raw ? JSON.parse(raw) : null;
-      } catch(e) { return null; }
+      } catch (e) { return null; }
     }
 
     function getCacheAge() {
@@ -432,12 +857,12 @@
       if (/^\d{4}-\d{2}-\d{2}$/.test(date)) return date;
       const d = new Date(date);
       if (isNaN(d.getTime())) return date.toString();
-      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     }
 
     function simplifyLocation(location) {
       if (!location) return '';
-      const m = {'台北桃園':'桃園','台北松山':'松山','上海浦東':'浦東','上海虹橋':'虹橋','首爾仁川':'仁川','首爾金浦':'金浦'};
+      const m = { '台北桃園': '桃園', '台北松山': '松山', '上海浦東': '浦東', '上海虹橋': '虹橋', '首爾仁川': '仁川', '首爾金浦': '金浦' };
       return m[location] || location;
     }
 
@@ -451,12 +876,12 @@
             if (date.getFullYear() === 1899) {
               let h = date.getUTCHours() + 8;
               if (h >= 24) h -= 24;
-              return `${String(h).padStart(2,'0')}:${String(date.getUTCMinutes()).padStart(2,'0')}`;
+              return `${String(h).padStart(2, '0')}:${String(date.getUTCMinutes()).padStart(2, '0')}`;
             } else {
-              return `${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
+              return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
             }
           }
-        } catch(e) {}
+        } catch (e) { }
       }
       return timeStr;
     }
@@ -482,7 +907,7 @@
     }
 
     function generateMonthCalendar(year, month, flights) {
-      const monthNames = ['','一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+      const monthNames = ['', '一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
       const daysInMonth = new Date(year, month, 0).getDate();
       const firstDay = new Date(year, month - 1, 1).getDay();
 
@@ -495,7 +920,7 @@
 
       const section = document.createElement('section');
       section.className = 'month';
-      section.id = `m-${year}-${String(month).padStart(2,'0')}`;
+      section.id = `m-${year}-${String(month).padStart(2, '0')}`;
 
       const hdr = document.createElement('header');
       hdr.className = 'month-header';
@@ -619,7 +1044,7 @@
     }
 
     // ── Pull-to-refresh ───────────────────────────────────────────
-    (function() {
+    (function () {
       const PTR_THRESHOLD = 70;
       const indicator = document.getElementById('ptrIndicator');
       let startY = 0, pulling = false, triggered = false;
@@ -667,7 +1092,7 @@
         }
       }, { passive: true });
 
-      window._ptrHide = function() {
+      window._ptrHide = function () {
         indicator.classList.remove('spinning');
         indicator.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
         setPtrY(0);
@@ -679,19 +1104,11 @@
     document.addEventListener('DOMContentLoaded', loadFlightsFromGAS);
 
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js').then(reg => {
-        console.log('Service Worker registered.');
-        // Listen for background CSV update messages from SW
-        navigator.serviceWorker.addEventListener('message', (event) => {
-          if (event.data && event.data.type === 'CSV_UPDATED' && !isLoading) {
-            // Silently refresh data when SW has fetched a new CSV
-            loadFlightsFromGAS({ silent: true });
-          }
-        });
-      }).catch(err => {
+      navigator.serviceWorker.register('./sw.js').catch(err => {
         console.warn('Service Worker registration failed:', err);
       });
     }
   </script>
 </body>
+
 </html>

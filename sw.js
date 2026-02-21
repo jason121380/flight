@@ -45,10 +45,7 @@ self.addEventListener('fetch', (event) => {
           .then(response => {
             if (response.ok) {
               cache.put(event.request, response.clone());
-              // Notify all clients that fresh data is available
-              self.clients.matchAll().then(clients => {
-                clients.forEach(client => client.postMessage({ type: 'CSV_UPDATED' }));
-              });
+              // Cache updated silently — App manages its own refresh cycle
             }
             return response;
           })
