@@ -1,4 +1,27 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="115" fill="#1d4ed8"/>
-  <path fill="white" d="M256,82 C247,82 236,92 236,110 L236,246 L84,305 L84,331 L236,291 L236,374 L204,398 L204,416 L256,402 L308,416 L308,398 L276,374 L276,291 L428,331 L428,305 L276,246 L276,110 C276,92 265,82 256,82 Z"/>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+  </defs>
+  <!-- Rounded square background -->
+  <rect width="512" height="512" rx="115" fill="url(#bg)"/>
+  <!-- Contrail arcs -->
+  <path d="M 90 370 Q 180 300 270 200" stroke="rgba(255,255,255,0.25)" stroke-width="12" fill="none" stroke-linecap="round"/>
+  <path d="M 120 400 Q 210 320 300 210" stroke="rgba(255,255,255,0.18)" stroke-width="10" fill="none" stroke-linecap="round"/>
+  <path d="M 60 340 Q 160 270 250 175" stroke="rgba(255,255,255,0.12)" stroke-width="8" fill="none" stroke-linecap="round"/>
+  <!-- Airplane body -->
+  <g transform="translate(256,256) rotate(-40) scale(1.15)">
+    <!-- Fuselage -->
+    <ellipse cx="0" cy="0" rx="18" ry="105" fill="white"/>
+    <!-- Main wings -->
+    <path d="M -8,-15 L -105,55 L -90,68 L -8,30 Z" fill="white"/>
+    <path d="M 8,-15 L 105,55 L 90,68 L 8,30 Z" fill="white"/>
+    <!-- Tail wings -->
+    <path d="M -8,72 L -52,105 L -44,115 L -8,90 Z" fill="white"/>
+    <path d="M 8,72 L 52,105 L 44,115 L 8,90 Z" fill="white"/>
+    <!-- Nose -->
+    <ellipse cx="0" cy="-105" rx="10" ry="18" fill="white"/>
+  </g>
 </svg>
